@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | ระบบเลือกตั้งเทพศิรินทร์ นนทบุรี</title>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Mitr', sans-serif; background-color: #f0f2f5; }
+        .sidebar { background-color: #006633; color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; }
+        .content-area { padding: 15px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .btn-save { background-color: #FFCC00; color: #006633; font-weight: bold; border-radius: 10px; }
+        .table img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; }
+        
+        .menu-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; }
+        @media (min-width: 768px) {
+            .sidebar { min-height: 100vh; padding: 20px; }
+            .menu-container { flex-direction: column; overflow-x: visible; white-space: normal; }
+            .menu-container .btn { width: 100%; margin-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-md-2 sidebar">
+            <h4 class="fw-bold mt-3 text-center">Admin Panel</h4>
+            <hr class="d-none d-md-block">
+            <div class="menu-container">
+                <button class="btn btn-light rounded-pill" onclick="switchTab('manage')">👥 จัดการผู้สมัคร</button>
+                <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
+                <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
+                <a href="index.html" class="btn btn-outline-light rounded-pill mt-md-5">🏠 กลับหน้าหลัก</a>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-10 content-area">
+            
+            <div id="tab-manage">
+                <h3 class="fw-bold mb-4 text-success">จัดการข้อมูลผู้สมัคร</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card p-4 mb-4">
+                            <h5 class="fw-bold mb-4">➕ เพิ่มผู้สมัคร</h5>
+                            <div class="mb-3"><label class="form-label small">คณะสี</label>
+                                <select id="faction" class="form-select rounded-pill">
+                                    <option>คณะแม้นนฤมิตร</option><option>คณะเยาวมาลย์อุทิศ</option>
+                                    <option>คณะนิภานภดล</option><option>คณะปิยราชบพิตร</option><option>คณะภาณุรังษี</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-4 mb-3"><label class="small">เบอร์</label><input type="number" id="number" class="form-control rounded-pill"></div>
+                                <div class="col-8 mb-3"><label class="small">ชื่อ-สกุล</label><input type="text" id="name" class="form-control rounded-pill"></div>
+                            </div>
+                            <div class="mb-4"><label class="small">รูปภาพ</label><input type="file" id="imageFile" class="form-control rounded-3" accept="image/*"></div>
+                            <button class="btn btn-save w-100 py-2" onclick="addCandidate()">บันทึกข้อมูลเข้า Supabase</button>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold m-0">📋 รายชื่อผู้สมัครปัจจุบัน</h5>
+                                <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="loadCandidates()">🔄 รีเฟรช</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead><tr><th>รูป</th><th>เบอร์</th><th>คณะ</th><th>ชื่อ</th><th>จัดการ</th></tr></thead>
+                                    <tbody id="table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-score" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold text-success m-0">📊 สรุปผลคะแนน (Live Score)</h3>
+                    <button class="btn btn-success rounded-pill px-4" onclick="loadLiveScores()">🔄 อัปเดตล่าสุด</button>
+                </div>
+                <div class="card p-4">
+                    <select id="scoreFilter" class="form-select rounded-pill mb-4 w-auto" onchange="renderChart()">
+                        <option value="all">🏆 คะแนนรวมทุกคณะสี</option>
+                        <option value="คณะแม้นนฤมิตร">💜 คณะแม้นนฤมิตร</option>
+                        <option value="คณะเยาวมาลย์อุทิศ">💙 คณะเยาวมาลย์อุทิศ</option>
+                        <option value="คณะนิภานภดล">🧡 คณะนิภานภดล</option>
+                        <option value="คณะปิยราชบพิตร">💗 คณะปิยราชบพิตร</option>
+                        <option value="คณะภาณุรังษี">❤️ คณะภาณุรังษี</option>
+                    </select>
+                    <div style="height: 450px;"><canvas id="scoreChart"></canvas></div>
+                </div>
+            </div>
+
+            <div id="tab-turnout" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold text-info m-0">📈 สถิติผู้มาใช้สิทธิ์ (Turnout)</h3>
+                    <button class="btn btn-info text-white rounded-pill px-4" onclick="loadParticipation()">🔄 อัปเดตสถิติ</button>
+                </div>
+                <div class="card p-4">
+                    <select id="turnoutFilter" class="form-select rounded-pill mb-4 w-auto" onchange="loadParticipation()">
+                        <option value="all">แสดงทุกคณะสี</option>
+                        <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
+                        <option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ</option>
+                        <option value="คณะนิภานภดล">คณะนิภานภดล</option>
+                        <option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร</option>
+                        <option value="คณะภาณุรังษี">คณะภาณุรังษี</option>
+                    </select>
+                    <div id="turnout-container" class="row g-3"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==============================================================
+    const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
+    
+    // 🟢 แก้ไขชื่อตัวแปรเป็น supabaseClient เพื่อป้องกันชื่อซ้ำจนระบบค้าง
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ==============================================================
+
+    let myChart = null;
+    const factionColors = { 'คณะแม้นนฤมิตร': '#6f42c1', 'คณะเยาวมาลย์อุทิศ': '#0d6efd', 'คณะนิภานภดล': '#fd7e14', 'คณะปิยราชบพิตร': '#d63384', 'คณะภาณุรังษี': '#dc3545', 'งดออกเสียง': '#6c757d' };
+
+    window.onload = () => { loadCandidates(); };
+
+    function switchTab(tab) {
+        document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('d-none'));
+        document.getElementById(`tab-${tab}`).classList.remove('d-none');
+        if(tab === 'score') loadLiveScores();
+        if(tab === 'turnout') loadParticipation();
+    }
+
+    async function loadCandidates() {
+        const body = document.getElementById('table-body');
+        body.innerHTML = '<tr><td colspan="5" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+        
+        try {
+            const { data, error } = await supabaseClient.from('candidates').select('*').order('faction').order('number');
+            if (error) throw error;
+
+            body.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(c => {
+                    body.innerHTML += `<tr>
+                        <td><img src="${c.image_url || 'https://via.placeholder.com/45'}"></td>
+                        <td>${c.number}</td>
+                        <td>${c.faction}</td>
+                        <td>${c.name}</td>
+                        <td><button class="btn btn-sm btn-danger rounded-pill" onclick="deleteCandidate('${c.id}')">ลบ</button></td>
+                    </tr>`;
+                });
+            } else {
+                body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีข้อมูลผู้สมัครในระบบ</td></tr>';
+            }
+        } catch (err) {
+            console.error(err);
+            body.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้</td></tr>';
+        }
+    }
+
+    async function addCandidate() {
+        const file = document.getElementById('imageFile').files[0];
+        const num = document.getElementById('number').value;
+        const name = document.getElementById('name').value;
+        const faction = document.getElementById('faction').value;
+
+        if(!num || !name) return Swal.fire('แจ้งเตือน','กรอกข้อมูลให้ครบ','warning');
+        Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
+
+        try {
+            let imgUrl = "";
+            if(file) {
+                const fileName = `${Date.now()}_${file.name}`;
+                const { data: uploadData, error: uploadErr } = await supabaseClient.storage.from('candidate-images').upload(fileName, file);
+                if(uploadErr) throw uploadErr;
+                imgUrl = supabaseClient.storage.from('candidate-images').getPublicUrl(fileName).data.publicUrl;
+            }
+
+            const { error: insErr } = await supabaseClient.from('candidates').insert([{ number: num, name, faction, image_url: imgUrl }]);
+            if(insErr) throw insErr;
+
+            Swal.fire('สำเร็จ!','เพิ่มผู้สมัครเรียบร้อยแล้ว','success');
+            document.getElementById('number').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('imageFile').value = '';
+            loadCandidates();
+        } catch (e) {
+            Swal.fire('Error', e.message, 'error');
+        }
+    }
+
+    async function deleteCandidate(id) {
+        const { isConfirmed } = await Swal.fire({ title:'ยืนยันการลบ?', icon:'warning', showCancelButton:true, confirmButtonColor: '#d33' });
+        if(isConfirmed) {
+            await supabaseClient.from('candidates').delete().eq('id', id);
+            loadCandidates();
+        }
+    }
+
+    async function loadLiveScores() {
+        const { data: votes, error } = await supabaseClient.from('votes').select('candidate_id, candidates(faction, number, name)');
+        let stats = { "งดออกเสียง": 0 };
+        
+        if (votes) {
+            votes.forEach(v => {
+                if(!v.candidate_id) stats["งดออกเสียง"]++;
+                else if (v.candidates) {
+                    const f = v.candidates.faction;
+                    const n = `เบอร์ ${v.candidates.number}`;
+                    if(!stats[f]) stats[f] = {};
+                    stats[f][n] = (stats[f][n] || 0) + 1;
+                }
+            });
+        }
+        Object.keys(factionColors).forEach(f => {
+            if (f !== "งดออกเสียง" && !stats[f]) stats[f] = {};
+        });
+        renderChart(stats);
+    }
+
+    function renderChart(scores) {
+        if (!scores) return;
+        const filter = document.getElementById('scoreFilter').value;
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        let labels = [], dataPoints = [], bgColors = [];
+
+        if(filter === "all") {
+            Object.keys(factionColors).forEach(f => {
+                labels.push(window.innerWidth < 768 ? f.replace('คณะ', '') : f);
+                let total = f === "งดออกเสียง" ? (scores[f] || 0) : Object.values(scores[f] || {}).reduce((a,b) => a+b, 0);
+                dataPoints.push(total);
+                bgColors.push(factionColors[f]);
+            });
+        } else {
+            const fData = scores[filter] || {};
+            Object.keys(fData).forEach(cand => {
+                labels.push(cand);
+                dataPoints.push(fData[cand]);
+                bgColors.push(factionColors[filter]);
+            });
+        }
+
+        if(myChart) myChart.destroy();
+        Chart.register(ChartDataLabels);
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ data: dataPoints, backgroundColor: bgColors, borderRadius: 10 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                layout: { padding: { top: 30 } },
+                plugins: { 
+                    legend: { display: false },
+                    datalabels: { color: 'white', rotation: -90, anchor: 'end', align: 'start', font: { family: 'Mitr', weight: 'bold', size: 20 }, display: (c) => c.dataset.data[c.dataIndex] > 0 }
+                }
+            }
+        });
+    }
+
+    async function loadParticipation() {
+        const container = document.getElementById('turnout-container');
+        container.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border text-info mb-3"></div><br>กำลังโหลด...</div>';
+        
+        const { data: tokens, error } = await supabaseClient.from('tokens').select('*');
+        const filter = document.getElementById('turnoutFilter').value;
+        container.innerHTML = '';
+
+        if (error) {
+            container.innerHTML = '<div class="col-12 text-center text-danger">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
+            return;
+        }
+
+        let stats = {};
+        if (tokens) {
+            tokens.forEach(t => {
+                let room = t.room || "ไม่ระบุห้อง";
+                if(!stats[room]) stats[room] = { total: 0, voted: 0, faction: t.faction || "ไม่ระบุ" };
+                stats[room].total++;
+                if(t.is_used) stats[room].voted++;
+            });
+        }
+
+        const rooms = Object.keys(stats).sort();
+        if (rooms.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted py-4">ยังไม่มีข้อมูลห้องเรียนในระบบ (ตาราง Tokens ว่างเปล่า)</div>';
+            return;
+        }
+
+        let count = 0;
+        rooms.forEach(room => {
+            const s = stats[room];
+            if(filter !== 'all' && s.faction !== filter) return;
+            count++;
+            const percent = s.total > 0 ? Math.round((s.voted / s.total) * 100) : 0;
+            let barColor = percent >= 80 ? "bg-success" : (percent >= 50 ? "bg-warning text-dark" : "bg-danger");
+            
+            container.innerHTML += `<div class="col-md-4"><div class="card p-3 shadow-sm border-0" style="border-left: 5px solid ${factionColors[s.faction] || '#ccc'} !important;">
+                <div class="fw-bold">${room} <small class="badge bg-secondary opacity-75">${s.faction.replace('คณะ', '')}</small></div>
+                <div class="progress my-2" style="height:20px"><div class="progress-bar ${barColor}" style="width:${percent}%">${percent}%</div></div>
+                <div class="small text-muted d-flex justify-content-between">
+                    <span>ใช้สิทธิ์แล้ว <b class="text-dark">${s.voted}</b>/${s.total}</span>
+                    <span class="text-danger">ขาด ${s.total - s.voted}</span>
+                </div>
+            </div></div>`;
+        });
+        
+        if (count === 0) container.innerHTML = '<div class="col-12 text-center text-muted py-4">ไม่พบห้องเรียนในคณะสีที่เลือก</div>';
+    }
+</script>
+</body>
+</html>
