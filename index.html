@@ -53,7 +53,7 @@
 
     <div class="container mb-5" style="max-width: 900px;">
         
-        <div id="view-welcome" class="main-card p-5 text-center mt-4">
+        <div id="view-welcome" class="main-card p-4 p-md-5 text-center mt-4">
             <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width: 120px;" class="mb-4">
             <h2 class="fw-bold mb-3">ยินดีต้อนรับสู่ระบบเลือกตั้ง</h2>
             <p class="text-muted mb-4">เลือกตั้งประธานนักเรียนคณะสี โรงเรียนเทพศิรินทร์ นนทบุรี</p>
@@ -64,6 +64,30 @@
             <div class="d-flex flex-column align-items-center gap-3">
                 <button class="btn btn-dsn btn-lg px-5 w-100" style="max-width: 350px;" onclick="showView('view-factions')">🗳️ เข้าสู่ระบบการลงคะแนน</button>
                 <button class="btn btn-outline-success btn-lg px-5 w-100 bg-light" style="max-width: 350px; border-width: 2px;" onclick="showTurnoutView()">📈 ดูสถิติผู้มาใช้สิทธิ์ (Live)</button>
+            </div>
+
+            <div class="card p-3 p-md-4 mt-5 shadow-sm border-0 bg-light text-start" style="border-radius: 15px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0 text-success" style="font-size: 1.1rem;">📋 ตรวจสอบรายชื่อผู้มีสิทธิ์</h5>
+                    <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="loadVotersIndex()">🔄 รีเฟรช</button>
+                </div>
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto; border-radius: 10px;">
+                    <table class="table table-hover align-middle text-center small bg-white mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>เลขประจำตัว</th>
+                                <th>เลขที่</th>
+                                <th>ชื่อ - สกุล</th>
+                                <th>คณะสี</th>
+                                <th>ห้อง</th>
+                                <th>สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voterIndexTableBody">
+                            <tr><td colspan="6" class="text-center text-muted py-4">กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -162,6 +186,9 @@
         } catch (err) {
             console.error("Supabase load error:", err);
         }
+        
+        // สั่งให้โหลดรายชื่อผู้ใช้สิทธิ์ทันทีที่เปิดเว็บ
+        loadVotersIndex();
     };
 
     function selectFaction(name, colorName, hex) {
@@ -215,12 +242,6 @@
                         .eq('token_code', tokenInput)
                         .single();
 
-                    if (tokenErr || !tokenData) {
-                        return Swal.fire('ล้มเหลว', 'รหัส Token ไม่ถูกต้อง ไม่มีในระบบ', 'error');
-                    }
-                    if (tokenData.is_used) {
-                        return Swal.fire('ล้มเหลว', 'รหัส Token นี้ถูกใช้ลงคะแนนไปแล้ว', 'error');
-                    }
                     if (tokenErr || !tokenData) {
                         return Swal.fire('ล้มเหลว', 'รหัส Token ไม่ถูกต้อง ไม่มีในระบบ', 'error');
                     }
@@ -331,6 +352,44 @@
         } catch (err) {
             console.error(err);
             container.innerHTML = `<div class="col-12 text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>`;
+        }
+    }
+
+    // 🔴 ฟังก์ชันใหม่: สำหรับโหลดรายชื่อมาแสดงในหน้าแรก
+    async function loadVotersIndex() {
+        const body = document.getElementById('voterIndexTableBody');
+        if(!body) return;
+        
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-success me-2"></div>กำลังโหลดข้อมูล...</td></tr>';
+        
+        try {
+            const { data, error } = await supabaseClient.from('tokens').select('*').order('room').order('student_no');
+            if (error) throw error;
+
+            body.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${t.student_id || '-'}</td>
+                        <td>${t.student_no || '-'}</td>
+                        <td class="text-start">${t.fullname || '-'}</td>
+                        <td>${t.faction || '-'}</td>
+                        <td>${t.room || '-'}</td>
+                        <td>
+                            <span class="badge ${t.is_used ? 'bg-success' : 'bg-secondary'}">
+                                ${t.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}
+                            </span>
+                        </td>
+                    `;
+                    body.appendChild(tr);
+                });
+            } else {
+                body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ยังไม่มีข้อมูลนักเรียนในระบบ</td></tr>';
+            }
+        } catch (err) {
+            console.error(err);
+            body.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">❌ ไม่สามารถดึงข้อมูลได้</td></tr>';
         }
     }
 
