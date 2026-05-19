@@ -221,6 +221,20 @@
                     if (tokenData.is_used) {
                         return Swal.fire('ล้มเหลว', 'รหัส Token นี้ถูกใช้ลงคะแนนไปแล้ว', 'error');
                     }
+                    if (tokenErr || !tokenData) {
+                        return Swal.fire('ล้มเหลว', 'รหัส Token ไม่ถูกต้อง ไม่มีในระบบ', 'error');
+                    }
+                    if (tokenData.is_used) {
+                        return Swal.fire('ล้มเหลว', 'รหัส Token นี้ถูกใช้ลงคะแนนไปแล้ว', 'error');
+                    }
+                    // 🔴 เพิ่มการเช็คคณะสี (ดักจับการกรอกผิดสี)
+                    if (tokenData.faction !== currentFaction) {
+                        return Swal.fire(
+                            'ผิดคณะสี!', 
+                            `รหัส Token นี้เป็นของ <b>${tokenData.faction}</b><br>ไม่สามารถใช้ลงคะแนนใน ${currentFaction} ได้ครับ`, 
+                            'warning'
+                        );
+                    }
 
                     const { error: updateErr } = await supabaseClient
                         .from('tokens')
