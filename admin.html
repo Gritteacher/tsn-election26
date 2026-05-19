@@ -40,6 +40,7 @@
                 <button class="btn btn-light rounded-pill" onclick="switchTab('manage')">👥 จัดการผู้สมัคร</button>
                 <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
                 <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
+                <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
                 <a href="index.html" class="btn btn-outline-light rounded-pill mt-md-5">🏠 กลับหน้าหลัก</a>
             </div>
         </div>
@@ -119,6 +120,30 @@
                 </div>
             </div>
 
+            <div id="tab-voters" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
+                    <button class="btn btn-secondary rounded-pill px-4" onclick="loadVoters()">🔄 อัปเดตข้อมูล</button>
+                </div>
+                <div class="card p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>เลขประจำตัว</th>
+                                    <th>เลขที่</th>
+                                    <th>ชื่อ - สกุล</th>
+                                    <th>คณะสี</th>
+                                    <th>ห้อง</th>
+                                    <th>สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="voterTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -128,7 +153,6 @@
     const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
     
-    // 🟢 แก้ไขชื่อตัวแปรเป็น supabaseClient เพื่อป้องกันชื่อซ้ำจนระบบค้าง
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ==============================================================
 
@@ -142,6 +166,7 @@
         document.getElementById(`tab-${tab}`).classList.remove('d-none');
         if(tab === 'score') loadLiveScores();
         if(tab === 'turnout') loadParticipation();
+        if(tab === 'voters') loadVoters(); // โหลดข้อมูลเมื่อเปิดแท็บใหม่
     }
 
     async function loadCandidates() {
@@ -318,6 +343,43 @@
         });
         
         if (count === 0) container.innerHTML = '<div class="col-12 text-center text-muted py-4">ไม่พบห้องเรียนในคณะสีที่เลือก</div>';
+    }
+
+    // ฟังก์ชันใหม่ สำหรับโหลดรายชื่อนักเรียน
+    async function loadVoters() {
+        const body = document.getElementById('voterTableBody');
+        body.innerHTML = '<tr><td colspan="6" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+        
+        try {
+            // ดึงข้อมูลเรียงตามห้องและเลขที่
+            const { data, error } = await supabaseClient.from('tokens').select('*').order('room').order('student_no');
+            if (error) throw error;
+
+            body.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${t.student_id || '-'}</td>
+                        <td>${t.student_no || '-'}</td>
+                        <td class="text-start">${t.fullname || '-'}</td>
+                        <td>${t.faction || '-'}</td>
+                        <td>${t.room || '-'}</td>
+                        <td>
+                            <span class="badge ${t.is_used ? 'bg-success' : 'bg-secondary'}">
+                                ${t.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}
+                            </span>
+                        </td>
+                    `;
+                    body.appendChild(tr);
+                });
+            } else {
+                body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ยังไม่มีข้อมูลนักเรียนในระบบ</td></tr>';
+            }
+        } catch (err) {
+            console.error(err);
+            body.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">❌ ไม่สามารถดึงข้อมูลได้</td></tr>';
+        }
     }
 </script>
 </body>
