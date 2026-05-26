@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root { --green:#006633; --yellow:#ffcc00; --glass:rgba(255,255,255,.72); --border:rgba(255,255,255,.45); }
     body {
@@ -26,7 +26,7 @@
     .sidebar-inner { border-radius:28px; padding:18px; }
     .content-area { padding:24px; }
     .card { border:1px solid rgba(255,255,255,.55); border-radius:24px; background:rgba(255,255,255,.72); box-shadow:0 12px 34px rgba(0,0,0,.08); }
-    .btn-save { background:linear-gradient(135deg,var(--yellow),#ffe680); color:var(--green); font-weight:700; border:0; border-radius:999px; }
+    .btn-save { background:linear-gradient(135deg,var(--yellow),#ffe680); color:var(--green); font-weight: 400; border:0; border-radius:999px; }
     .table img { width:50px; height:50px; border-radius:14px; object-fit:cover; }
     .form-control,.form-select { border-radius:999px; background:rgba(255,255,255,.72); }
     .menu-container { display:flex; flex-direction:column; gap:10px; }
@@ -35,12 +35,30 @@
       .menu-container { flex-direction:row; overflow-x:auto; white-space:nowrap; }
       .content-area { padding:12px; }
     }
+  
+    /* Lightweight typography override */
+    body {
+      font-weight: 300;
+      letter-spacing: 0.01em;
+    }
+    h1, h2, h3, h4, h5, h6,
+    .fw-bold, .fw-semibold, .fw-normal,
+    .btn, .badge, label, th,
+    .faction-name, .faction-grid-title,
+    .faction-cta, .faction-bottom-text b,
+    .btn-dsn, .btn-save {
+      font-weight: 400 !important;
+    }
+    .text-muted, small, .small, p {
+      font-weight: 300 !important;
+    }
+    
   </style>
 </head>
 <body>
 <div id="loginView" class="container py-5 d-none" style="max-width:520px">
   <div class="card glass p-4 mt-5">
-    <h3 class="fw-bold text-success text-center">Admin Login</h3>
+    <h3 class="fw-normal text-success text-center">Admin Login</h3>
     <p class="text-muted text-center">เข้าสู่ระบบผู้ดูแล</p>
     <input id="loginEmail" type="email" class="form-control form-control-lg mb-3" placeholder="อีเมลผู้ดูแล">
     <input id="loginPassword" type="password" class="form-control form-control-lg mb-3" placeholder="รหัสผ่าน">
@@ -53,7 +71,7 @@
   <div class="row">
     <div class="col-12 col-md-3 col-lg-2 sidebar">
       <div class="sidebar-inner glass">
-        <h4 class="fw-bold text-success text-center mt-2">Admin Panel</h4>
+        <h4 class="fw-normal text-success text-center mt-2">Admin Panel</h4>
         <hr>
         <div class="menu-container">
           <button class="btn btn-light rounded-pill" onclick="switchTab('manage')">👥 จัดการผู้สมัคร</button>
@@ -68,11 +86,11 @@
 
     <div class="col-12 col-md-9 col-lg-10 content-area">
       <div id="tab-manage">
-        <h3 class="fw-bold mb-4 text-success">จัดการข้อมูลผู้สมัคร</h3>
+        <h3 class="fw-normal mb-4 text-success">จัดการข้อมูลผู้สมัคร</h3>
         <div class="row g-4">
           <div class="col-lg-4">
             <div class="card p-4">
-              <h5 class="fw-bold mb-3">➕ เพิ่มผู้สมัคร</h5>
+              <h5 class="fw-normal mb-3">➕ เพิ่มผู้สมัคร</h5>
               <label class="form-label small">คณะสี</label>
               <select id="faction" class="form-select mb-3">
                 <option>คณะแม้นนฤมิตร</option><option>คณะเยาวมาลย์อุทิศ</option>
@@ -89,7 +107,7 @@
           <div class="col-lg-8">
             <div class="card p-4">
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold m-0">📋 รายชื่อผู้สมัครปัจจุบัน</h5>
+                <h5 class="fw-normal m-0">📋 รายชื่อผู้สมัครปัจจุบัน</h5>
                 <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="loadCandidates()">🔄 รีเฟรช</button>
               </div>
               <div class="table-responsive">
@@ -105,7 +123,7 @@
 
       <div id="tab-score" class="d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 class="fw-bold text-success m-0">📊 สรุปผลคะแนน</h3>
+          <h3 class="fw-normal text-success m-0">📊 สรุปผลคะแนน</h3>
           <button class="btn btn-success rounded-pill px-4" onclick="loadLiveScores()">🔄 อัปเดตล่าสุด</button>
         </div>
         <div class="card p-4">
@@ -123,7 +141,7 @@
 
       <div id="tab-turnout" class="d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 class="fw-bold text-info m-0">📈 สถิติผู้มาใช้สิทธิ์</h3>
+          <h3 class="fw-normal text-info m-0">📈 สถิติผู้มาใช้สิทธิ์</h3>
           <button class="btn btn-info text-white rounded-pill px-4" onclick="loadParticipation()">🔄 อัปเดตสถิติ</button>
         </div>
         <div class="card p-4">
@@ -141,23 +159,23 @@
 
       <div id="tab-voters" class="d-none">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-2">
-          <h3 class="fw-bold text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
+          <h3 class="fw-normal text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
           <button class="btn btn-secondary rounded-pill px-4" onclick="resetVoterFiltersAndLoad()">🔄 อัปเดตข้อมูล</button>
         </div>
         <div class="card p-4 mb-3">
           <div class="row g-3 align-items-end">
             <div class="col-md-3">
-              <label class="form-label small fw-bold">ค้นหาชื่อ/เลขประจำตัว</label>
+              <label class="form-label small fw-normal">ค้นหาชื่อ/เลขประจำตัว</label>
               <input id="voterSearchInput" class="form-control" placeholder="พิมพ์คำค้นหา" onkeydown="if(event.key==='Enter') loadVoters(1)">
             </div>
             <div class="col-md-2">
-              <label class="form-label small fw-bold">ห้อง</label>
+              <label class="form-label small fw-normal">ห้อง</label>
               <select id="voterRoomFilter" class="form-select" onchange="loadVoters(1)">
                 <option value="all">ทุกห้อง</option>
               </select>
             </div>
             <div class="col-md-3">
-              <label class="form-label small fw-bold">คณะสี</label>
+              <label class="form-label small fw-normal">คณะสี</label>
               <select id="voterFactionFilter" class="form-select" onchange="loadVoters(1)">
                 <option value="all">ทุกคณะสี</option>
                 <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
@@ -168,7 +186,7 @@
               </select>
             </div>
             <div class="col-md-2">
-              <label class="form-label small fw-bold">สถานะ</label>
+              <label class="form-label small fw-normal">สถานะ</label>
               <select id="voterStatusFilter" class="form-select" onchange="loadVoters(1)">
                 <option value="all">ทั้งหมด</option>
                 <option value="used">ใช้สิทธิ์แล้ว</option>
@@ -186,7 +204,7 @@
 
         <div class="card p-4">
           <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-            <div id="voterSummaryText" class="fw-bold text-secondary">ยังไม่ได้โหลดข้อมูล</div>
+            <div id="voterSummaryText" class="fw-normal text-secondary">ยังไม่ได้โหลดข้อมูล</div>
             <div class="d-flex gap-2">
               <button id="voterPrevBtn" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="loadVoters(voterCurrentPage - 1)">ก่อนหน้า</button>
               <button id="voterNextBtn" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="loadVoters(voterCurrentPage + 1)">ถัดไป</button>
@@ -396,7 +414,7 @@ function renderChart() {
       responsive:true, maintainAspectRatio:false,
       plugins: {
         legend: { display:false },
-        datalabels: { color:'white', anchor:'end', align:'start', font:{ family:'Mitr', weight:'bold', size:18 }, display:c=>c.dataset.data[c.dataIndex]>0 }
+        datalabels: { color:'white', anchor:'end', align:'start', font:{ family:'Mitr', weight:'400', size:18 }, display:c=>c.dataset.data[c.dataIndex]>0 }
       }
     }
   });
@@ -434,7 +452,7 @@ async function loadParticipation() {
       const color = factionColors[s.faction] || '#ccc';
       const barColor = percent >= 80 ? 'bg-success' : (percent >= 50 ? 'bg-warning text-dark' : 'bg-danger');
       container.innerHTML += `<div class="col-md-4"><div class="card p-3" style="border-left:6px solid ${color}">
-        <div class="fw-bold">${escapeHTML(s.room)} <small class="badge bg-secondary">${escapeHTML(String(s.faction).replace('คณะ',''))}</small></div>
+        <div class="fw-normal">${escapeHTML(s.room)} <small class="badge bg-secondary">${escapeHTML(String(s.faction).replace('คณะ',''))}</small></div>
         <div class="progress my-2" style="height:20px"><div class="progress-bar ${barColor}" style="width:${percent}%">${percent}%</div></div>
         <div class="small text-muted d-flex justify-content-between"><span>ใช้สิทธิ์แล้ว <b>${voted}</b>/${total}</span><span>ขาด ${total-voted}</span></div>
       </div></div>`;

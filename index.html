@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
       --green: #006633;
@@ -57,13 +57,13 @@
       border: 0;
       border-radius: 999px;
       padding: 12px 30px;
-      font-weight: 600;
+      font-weight: 400;
       box-shadow: 0 12px 24px rgba(0,102,51,.22);
     }
     .btn-dsn:hover { color: white; transform: translateY(-1px); }
     .faction-grid-title {
       font-size: clamp(1.9rem, 2.8vw, 2.8rem);
-      font-weight: 700;
+      font-weight: 400;
       text-align: center;
       color: #0b2c1e;
       margin-bottom: 10px;
@@ -126,7 +126,7 @@
       box-shadow: 0 10px 22px rgba(0,0,0,.12);
     }
     .faction-name {
-      font-weight: 700;
+      font-weight: 400;
       font-size: 1.55rem;
       line-height: 1.22;
       margin-bottom: 8px;
@@ -136,7 +136,7 @@
       align-items: center;
       gap: 8px;
       font-size: .92rem;
-      font-weight: 500;
+      font-weight: 400;
       background: rgba(255,255,255,.16);
       padding: 8px 12px;
       border-radius: 999px;
@@ -173,7 +173,7 @@
       border: none;
       border-radius: 999px;
       padding: 12px 18px;
-      font-weight: 700;
+      font-weight: 400;
       color: #0b2c1e;
       background: linear-gradient(135deg, #ffffff, #f1f4f1);
       box-shadow: 0 10px 24px rgba(0,0,0,.08);
@@ -214,7 +214,7 @@
       background: rgba(255,255,255,.75);
       border: 1px solid rgba(255,255,255,.55);
       color: #555;
-      font-weight: 600;
+      font-weight: 400;
     }
     .candidate-radio:checked + .no-vote-box { background: #6c757d; color: white; }
     .form-control, .form-select {
@@ -239,6 +239,24 @@
       .faction-bottom { flex-direction: column; align-items: stretch; gap: 12px; }
       .faction-cta { width: 100%; }
     }
+  
+    /* Lightweight typography override */
+    body {
+      font-weight: 300;
+      letter-spacing: 0.01em;
+    }
+    h1, h2, h3, h4, h5, h6,
+    .fw-bold, .fw-semibold, .fw-normal,
+    .btn, .badge, label, th,
+    .faction-name, .faction-grid-title,
+    .faction-cta, .faction-bottom-text b,
+    .btn-dsn, .btn-save {
+      font-weight: 400 !important;
+    }
+    .text-muted, small, .small, p {
+      font-weight: 300 !important;
+    }
+    
   </style>
 </head>
 <body>
@@ -246,7 +264,7 @@
     <div class="top-nav glass d-flex align-items-center justify-content-center gap-3">
       <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" alt="DSN Logo">
       <div>
-        <h4 class="m-0 fw-bold text-success">ระบบเลือกตั้งประธานนักเรียนคณะสี</h4>
+        <h4 class="m-0 fw-normal text-success">ระบบเลือกตั้งประธานนักเรียนคณะสี</h4>
         <p class="m-0 text-muted">โรงเรียนเทพศิรินทร์ นนทบุรี ประจำปีการศึกษา 2569</p>
       </div>
     </div>
@@ -254,7 +272,7 @@
     <main class="mx-auto my-4" style="max-width: 1100px;">
       <section id="view-welcome" class="main-card glass text-center">
         <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:120px" class="mb-3" alt="DSN Logo">
-        <h2 class="fw-bold">ยินดีต้อนรับสู่ระบบเลือกตั้ง</h2>
+        <h2 class="fw-normal">ยินดีต้อนรับสู่ระบบเลือกตั้ง</h2>
         <p class="text-muted">กรุณาเลือกเมนูที่ต้องการใช้งาน</p>
         <div class="alert alert-warning border-0 rounded-4 mx-auto" style="max-width:680px;background:rgba(255,248,218,.8)">
           <b>คำเตือน:</b> โปรดใช้สิทธิ์ด้วยความซื่อสัตย์สุจริต และตรวจสอบข้อมูลก่อนยืนยัน
@@ -343,10 +361,10 @@
       </section>
 
       <section id="view-voting" class="main-card glass d-none p-0">
-        <div id="vote-header" class="p-3 text-center text-white fw-bold"></div>
+        <div id="vote-header" class="p-3 text-center text-white fw-normal"></div>
         <div class="p-4">
           <div class="mb-4 text-center mx-auto" style="max-width:420px">
-            <label class="form-label fw-bold">🔑 รหัส Token ของท่าน 8 หลัก</label>
+            <label class="form-label fw-normal">🔑 รหัส Token ของท่าน 8 หลัก</label>
             <input type="text" id="voteToken" class="form-control form-control-lg text-center shadow-sm" maxlength="8" placeholder="XXXXXXXX" style="letter-spacing:3px;text-transform:uppercase">
           </div>
           <div class="row g-4 justify-content-center" id="candidate-list"></div>
@@ -359,7 +377,7 @@
 
       <section id="view-turnout" class="main-card glass d-none">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-2">
-          <h4 class="fw-bold text-success m-0">📈 สถิติผู้มาใช้สิทธิ์</h4>
+          <h4 class="fw-normal text-success m-0">📈 สถิติผู้มาใช้สิทธิ์</h4>
           <select id="publicFactionFilter" class="form-select w-auto" onchange="loadPublicParticipation()">
             <option value="all">แสดงทุกคณะสี</option>
             <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
@@ -452,7 +470,7 @@ function selectFaction(name, colorName, hex) {
           <input type="radio" name="candidate" class="candidate-radio" value="${id}">
           <div class="candidate-box text-center p-3">
             <img src="${img}" class="candidate-img mb-3" onerror="this.src='https://via.placeholder.com/150'" alt="รูปผู้สมัคร">
-            <h5 class="fw-bold mb-1">เบอร์ ${number}</h5>
+            <h5 class="fw-normal mb-1">เบอร์ ${number}</h5>
             <p class="small text-muted m-0">${cname}</p>
           </div>
         </label>
@@ -554,11 +572,11 @@ async function loadPublicParticipation() {
         <div class="col-md-6">
           <div class="room-stat-card p-3" style="border-left:6px solid ${color}">
             <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
-              <span class="fw-bold fs-5">ห้อง ${escapeHTML(room)} <span class="badge" style="background:${color}">${escapeHTML(faction)}</span></span>
+              <span class="fw-normal fs-5">ห้อง ${escapeHTML(room)} <span class="badge" style="background:${color}">${escapeHTML(faction)}</span></span>
               <span class="text-muted">ใช้สิทธิ์ <b class="text-success fs-5">${voted}</b> / ${total}</span>
             </div>
             <div class="progress" style="height:24px;border-radius:999px">
-              <div class="progress-bar ${barColor} fw-bold" style="width:${percent}%">${percent}%</div>
+              <div class="progress-bar ${barColor} fw-normal" style="width:${percent}%">${percent}%</div>
             </div>
             <div class="text-end small text-muted mt-2">แสดงเฉพาะภาพรวม</div>
           </div>
