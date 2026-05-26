@@ -1,481 +1,386 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบเลือกตั้งประธานนักเรียนคณะสี | โรงเรียนเทพศิรินทร์ นนทบุรี</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-    <style>
-        :root { --dsn-green: #006633; --dsn-yellow: #FFCC00; --dsn-dark: #2c3e50; }
-        body { font-family: 'Mitr', sans-serif; background-color: #f8f9fa; background-image: radial-gradient(#d1d1d1 1px, transparent 1px); background-size: 20px 20px; color: var(--dsn-dark); margin: 0; padding: 0; }
-        
-        .top-nav { background: linear-gradient(90deg, var(--dsn-green) 0%, var(--dsn-yellow) 100%); padding: 15px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: white; }
-        .top-nav img { width: 60px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
-        
-        .main-card { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: white; overflow: hidden; margin-top: -30px; animation: fadeInUp 0.6s ease; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        .btn-dsn { background-color: var(--dsn-green); color: white; border-radius: 50px; padding: 12px 35px; font-weight: 500; transition: 0.3s; border: none; }
-        .btn-dsn:hover { background-color: #004d26; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,102,51,0.3); color: white; }
-
-        .faction-item { border: 1px solid #eee; border-radius: 15px; transition: 0.3s; cursor: pointer; text-align: center; padding: 20px; height: 100%; position: relative; }
-        .faction-item:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-color: var(--dsn-green); }
-        .faction-header { height: 40px; border-radius: 10px 10px 0 0; margin: -20px -20px 20px -20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.9rem; }
-        
-        .candidate-box { border: 2px solid #f1f1f1; border-radius: 15px; padding: 20px; transition: 0.3s; cursor: pointer; background: #fff; }
-        .candidate-img { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #f8f9fa; margin-bottom: 15px; }
-        .candidate-radio { display: none; }
-        .candidate-radio:checked + .candidate-box { border-color: var(--dsn-yellow); background-color: var(--dsn-green); color: white; }
-        .candidate-radio:checked + .candidate-box .text-muted { color: #e0e0e0 !important; }
-
-        .footer { background-color: #2c3e50; color: white; padding: 30px 0; margin-top: 50px; font-size: 0.9rem; }
-        .no-vote-box { border: 2px solid #e0e0e0; border-radius: 50px; padding: 10px 30px; transition: 0.3s; cursor: pointer; background: #fff; color: #6c757d; font-weight: 500; }
-        .candidate-radio:checked + .no-vote-box { border-color: #6c757d; background-color: #6c757d; color: white; }
-
-        /* CSS สำหรับกล่องสถิติ */
-        .room-stat-card { transition: all 0.2s ease; border: 1px solid transparent; }
-        .room-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.08) !important; }
-        .election-status-card { border: 1px solid rgba(255,255,255,.6); border-radius: 18px; background: rgba(255,255,255,.72); backdrop-filter: blur(18px); box-shadow: 0 12px 30px rgba(0,102,51,.10); }
-        .status-dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; margin-right: 8px; }
-        .status-open { background: #198754; box-shadow: 0 0 0 6px rgba(25,135,84,.12); }
-        .status-closed { background: #dc3545; box-shadow: 0 0 0 6px rgba(220,53,69,.12); }
-        .status-waiting { background: #ffc107; box-shadow: 0 0 0 6px rgba(255,193,7,.16); }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบเลือกตั้งประธานนักเรียนคณะสี | โรงเรียนเทพศิรินทร์ นนทบุรี</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #006633;
+      --yellow: #ffcc00;
+      --dark: #10251b;
+      --glass: rgba(255,255,255,.72);
+      --border: rgba(255,255,255,.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Mitr', sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--dark);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(255,204,0,.36), transparent 28%),
+        radial-gradient(circle at 90% 5%, rgba(0,102,51,.26), transparent 30%),
+        radial-gradient(circle at 50% 90%, rgba(0,102,51,.18), transparent 30%),
+        linear-gradient(135deg, #f8fff9 0%, #fffbea 50%, #edf8f1 100%);
+      background-attachment: fixed;
+    }
+    .glass {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(0,0,0,.10);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .top-nav {
+      margin: 18px auto 0;
+      max-width: 980px;
+      border-radius: 28px;
+      padding: 16px 18px;
+    }
+    .top-nav img { width: 64px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.18)); }
+    .main-card {
+      border-radius: 30px;
+      padding: 28px;
+      overflow: hidden;
+      animation: fadeIn .45s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .btn-dsn {
+      background: linear-gradient(135deg, var(--green), #0d8a4c);
+      color: white;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 30px;
+      font-weight: 600;
+      box-shadow: 0 12px 24px rgba(0,102,51,.22);
+    }
+    .btn-dsn:hover { color: white; transform: translateY(-1px); }
+    .faction-item, .candidate-box, .room-stat-card {
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,.55);
+      background: rgba(255,255,255,.68);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: .22s ease;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,.08);
+    }
+    .faction-item:hover, .candidate-box:hover, .room-stat-card:hover { transform: translateY(-4px); }
+    .faction-header {
+      margin: -1px -1px 16px;
+      border-radius: 24px 24px 14px 14px;
+      padding: 14px 10px;
+      color: white;
+      font-weight: 600;
+    }
+    .candidate-img {
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 5px solid rgba(255,255,255,.85);
+      box-shadow: 0 14px 26px rgba(0,0,0,.12);
+    }
+    .candidate-radio { display: none; }
+    .candidate-radio:checked + .candidate-box {
+      background: linear-gradient(135deg, rgba(0,102,51,.92), rgba(0,130,72,.86));
+      color: white;
+      border-color: rgba(255,204,0,.95);
+      box-shadow: 0 16px 34px rgba(0,102,51,.26);
+    }
+    .candidate-radio:checked + .candidate-box .text-muted { color: rgba(255,255,255,.78) !important; }
+    .no-vote-box {
+      border-radius: 999px;
+      padding: 12px 30px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(255,255,255,.55);
+      color: #555;
+      font-weight: 600;
+    }
+    .candidate-radio:checked + .no-vote-box { background: #6c757d; color: white; }
+    .form-control, .form-select {
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.08);
+      background: rgba(255,255,255,.7);
+    }
+    .footer {
+      color: rgba(16,37,27,.78);
+      padding: 36px 0 28px;
+      font-size: .92rem;
+    }
+  </style>
 </head>
 <body>
-
-    <div class="top-nav text-center">
-        <div class="container d-flex align-items-center justify-content-center">
-            <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" class="me-3">
-            <div class="text-start">
-                <h4 class="m-0 fw-bold">ระบบเลือกตั้งประธานนักเรียนคณะสี</h4>
-                <p class="m-0 opacity-75">ประจำปีการศึกษา 2569</p>
-            </div>
-        </div>
+  <div class="container">
+    <div class="top-nav glass d-flex align-items-center justify-content-center gap-3">
+      <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" alt="DSN Logo">
+      <div>
+        <h4 class="m-0 fw-bold text-success">ระบบเลือกตั้งประธานนักเรียนคณะสี</h4>
+        <p class="m-0 text-muted">โรงเรียนเทพศิรินทร์ นนทบุรี ประจำปีการศึกษา 2569</p>
+      </div>
     </div>
 
-    <div class="container mb-5" style="max-width: 900px;">
-        
-        <div id="view-welcome" class="main-card p-4 p-md-5 text-center mt-4">
-            <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width: 120px;" class="mb-4">
-            <h2 class="fw-bold mb-3">ยินดีต้อนรับสู่ระบบเลือกตั้ง</h2>
-            <p class="text-muted mb-4">เลือกตั้งประธานนักเรียนคณะสี โรงเรียนเทพศิรินทร์ นนทบุรี</p>
-            <div class="alert alert-warning border-0 rounded-4 p-3 mb-4 mx-auto" style="max-width: 600px; font-size: 0.9rem;">
-                <b>คำเตือน:</b> โปรดใช้สิทธิ์ด้วยความซื่อสัตย์สุจริต หากพบการทุจริต คณะกรรมการจะดำเนินการตามระเบียบสูงสุด
-            </div>
-
-            <div id="electionStatusBox" class="election-status-card p-3 mb-4 mx-auto text-start" style="max-width: 640px;">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <div>
-                        <div class="fw-bold"><span id="electionStatusDot" class="status-dot status-waiting"></span><span id="electionStatusText">กำลังตรวจสอบเวลาเปิดลงคะแนน...</span></div>
-                        <div id="electionTimeText" class="small text-muted mt-1">กรุณารอสักครู่</div>
-                    </div>
-                    <button class="btn btn-sm btn-outline-success rounded-pill" onclick="loadElectionStatus(true)">🔄 ตรวจสอบเวลา</button>
-                </div>
-            </div>
-            
-            <div class="d-flex flex-column align-items-center gap-3">
-                <button class="btn btn-dsn btn-lg px-5 w-100" style="max-width: 350px;" id="startVotingBtn" onclick="attemptStartVoting()">🗳️ เข้าสู่ระบบการลงคะแนน</button>
-                <button class="btn btn-outline-success btn-lg px-5 w-100 bg-light" style="max-width: 350px; border-width: 2px;" onclick="showTurnoutView()">📈 ดูสถิติผู้มาใช้สิทธิ์ (Live)</button>
-            </div>
-            </div>
-
-        <div id="view-factions" class="main-card p-4 mt-4 d-none">
-            <h4 class="text-center fw-bold mb-4">เลือกคณะสีของท่าน</h4>
-            <div class="row g-4">
-                <div class="col-md-4 col-6"><div class="faction-item" onclick="selectFaction('คณะแม้นนฤมิตร', 'สีม่วง', '#6f42c1')"><div class="faction-header" style="background:#6f42c1">คณะแม้นนฤมิตร</div><img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:60px" class="mb-2"><br>เลือกตั้ง</div></div>
-                <div class="col-md-4 col-6"><div class="faction-item" onclick="selectFaction('คณะเยาวมาลย์อุทิศ', 'สีน้ำเงิน', '#0d6efd')"><div class="faction-header" style="background:#0d6efd">คณะเยาวมาลย์อุทิศ</div><img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:60px" class="mb-2"><br>เลือกตั้ง</div></div>
-                <div class="col-md-4 col-6"><div class="faction-item" onclick="selectFaction('คณะนิภานภดล', 'สีแสด', '#fd7e14')"><div class="faction-header" style="background:#fd7e14">คณะนิภานภดล</div><img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:60px" class="mb-2"><br>เลือกตั้ง</div></div>
-                <div class="col-md-4 col-6"><div class="faction-item" onclick="selectFaction('คณะปิยราชบพิตร', 'สีชมพู', '#d63384')"><div class="faction-header" style="background:#d63384">คณะปิยราชบพิตร</div><img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:60px" class="mb-2"><br>เลือกตั้ง</div></div>
-                <div class="col-md-4 col-6"><div class="faction-item" onclick="selectFaction('คณะภาณุรังษี', 'สีแดง', '#dc3545')"><div class="faction-header" style="background:#dc3545">คณะภาณุรังษี</div><img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:60px" class="mb-2"><br>เลือกตั้ง</div></div>
-            </div>
-            <div class="text-center mt-4"><button class="btn btn-light rounded-pill px-4" onclick="showView('view-welcome')">กลับหน้าหลัก</button></div>
+    <main class="mx-auto my-4" style="max-width: 980px;">
+      <section id="view-welcome" class="main-card glass text-center">
+        <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:120px" class="mb-3" alt="DSN Logo">
+        <h2 class="fw-bold">ยินดีต้อนรับสู่ระบบเลือกตั้ง</h2>
+        <p class="text-muted">กรุณาเลือกเมนูที่ต้องการใช้งาน</p>
+        <div class="alert alert-warning border-0 rounded-4 mx-auto" style="max-width:680px;background:rgba(255,248,218,.8)">
+          <b>คำเตือน:</b> โปรดใช้สิทธิ์ด้วยความซื่อสัตย์สุจริต และตรวจสอบข้อมูลก่อนยืนยัน
         </div>
-
-        <div id="view-voting" class="main-card mt-4 d-none">
-            <div id="vote-header" class="p-3 text-center text-white fw-bold"></div>
-            <div class="p-4">
-                <div class="mb-4 text-center mx-auto" style="max-width: 400px;">
-                    <label class="form-label fw-bold text-dsn-green">🔑 รหัส Token ของท่าน (8 หลัก)</label>
-                    <input type="text" id="voteToken" class="form-control form-control-lg text-center rounded-pill shadow-sm" maxlength="8" placeholder="XXXX-XXXX" style="letter-spacing: 3px; text-transform: uppercase;">
-                </div>
-                <div class="row g-4 justify-content-center" id="candidate-list"></div>
-                <div class="text-center mt-5">
-                    <button id="submitVoteBtn" class="btn btn-dsn btn-lg px-5" onclick="submitVote()">ยืนยันการลงคะแนน</button>
-                    <br><button class="btn btn-link text-muted mt-3" onclick="showView('view-factions')">ย้อนกลับ</button>
-                </div>
-            </div>
+        <div class="d-flex flex-column align-items-center gap-3">
+          <button class="btn btn-dsn btn-lg w-100" style="max-width:380px" onclick="showView('view-factions')">🗳️ เข้าสู่ระบบการลงคะแนน</button>
+          <button class="btn btn-outline-success btn-lg rounded-pill w-100" style="max-width:380px" onclick="showTurnoutView()">📈 ดูสถิติผู้มาใช้สิทธิ์</button>
         </div>
+      </section>
 
-        <div id="view-turnout" class="main-card p-4 mt-4 d-none">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold text-success m-0 mb-3 mb-md-0">📈 สถิติผู้มาใช้สิทธิ์ลงคะแนน</h4>
-                <select id="publicFactionFilter" class="form-select w-auto rounded-pill border-success" onchange="loadPublicParticipation()">
-                    <option value="all">แสดงทุกคณะสี</option>
-                    <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร (สีม่วง)</option>
-                    <option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ (สีน้ำเงิน)</option>
-                    <option value="คณะนิภานภดล">คณะนิภานภดล (สีแสด)</option>
-                    <option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร (สีชมพู)</option>
-                    <option value="คณะภาณุรังษี">คณะภาณุรังษี (สีแดง)</option>
-                </select>
-            </div>
-            
-            <div class="alert alert-info text-center rounded-pill py-2 small border-0 bg-light" role="alert">
-                💡 <b>หมายเหตุ:</b> หน้านี้แสดงเฉพาะสถิติภาพรวม ไม่เปิดเผยรายชื่อและสถานะรายบุคคล
-            </div>
-
-            <hr class="text-muted opacity-25">
-            <div id="public-turnout-container" class="row g-4 mt-1"></div>
-            <div class="text-center mt-5">
-                <button class="btn btn-success rounded-pill px-4 me-2" onclick="loadPublicParticipation()">🔄 อัปเดตข้อมูล</button>
-                <button class="btn btn-light rounded-pill px-4" onclick="showView('view-welcome')">กลับหน้าหลัก</button>
-            </div>
+      <section id="view-factions" class="main-card glass d-none">
+        <h4 class="text-center fw-bold mb-4">เลือกคณะสีของท่าน</h4>
+        <div class="row g-4">
+          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะแม้นนฤมิตร','สีม่วง','#6f42c1')"><div class="faction-header" style="background:#6f42c1">คณะแม้นนฤมิตร</div><b>เลือกตั้ง</b></div></div>
+          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะเยาวมาลย์อุทิศ','สีน้ำเงิน','#0d6efd')"><div class="faction-header" style="background:#0d6efd">คณะเยาวมาลย์อุทิศ</div><b>เลือกตั้ง</b></div></div>
+          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะนิภานภดล','สีแสด','#fd7e14')"><div class="faction-header" style="background:#fd7e14">คณะนิภานภดล</div><b>เลือกตั้ง</b></div></div>
+          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะปิยราชบพิตร','สีชมพู','#d63384')"><div class="faction-header" style="background:#d63384">คณะปิยราชบพิตร</div><b>เลือกตั้ง</b></div></div>
+          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะภาณุรังษี','สีแดง','#dc3545')"><div class="faction-header" style="background:#dc3545">คณะภาณุรังษี</div><b>เลือกตั้ง</b></div></div>
         </div>
+        <div class="text-center mt-4"><button class="btn btn-light rounded-pill px-4" onclick="showView('view-welcome')">กลับหน้าหลัก</button></div>
+      </section>
 
-    </div>
-
-    <div class="modal fade" id="roomVoterModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-            <div class="modal-content" style="border-radius: 20px; border: none;">
-                <div class="modal-header border-0 pb-0 mt-2 mx-2">
-                    <h5 class="modal-title fw-bold text-success" id="roomModalTitle">รายชื่อนักเรียน</h5>
-                    <button type="button" class="btn-close bg-light rounded-circle p-2" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle text-center small">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>เลขที่</th>
-                                    <th>เลขประจำตัว</th>
-                                    <th>ชื่อ - สกุล</th>
-                                    <th>สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="roomVoterTableBody">
-                                <tr><td colspan="4" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+      <section id="view-voting" class="main-card glass d-none p-0">
+        <div id="vote-header" class="p-3 text-center text-white fw-bold"></div>
+        <div class="p-4">
+          <div class="mb-4 text-center mx-auto" style="max-width:420px">
+            <label class="form-label fw-bold">🔑 รหัส Token ของท่าน 8 หลัก</label>
+            <input type="text" id="voteToken" class="form-control form-control-lg text-center shadow-sm" maxlength="8" placeholder="XXXXXXXX" style="letter-spacing:3px;text-transform:uppercase">
+          </div>
+          <div class="row g-4 justify-content-center" id="candidate-list"></div>
+          <div class="text-center mt-5">
+            <button id="submitVoteBtn" class="btn btn-dsn btn-lg px-5" onclick="submitVote()">ยืนยันการลงคะแนน</button>
+            <br><button class="btn btn-link text-muted mt-3" onclick="showView('view-factions')">ย้อนกลับ</button>
+          </div>
         </div>
-    </div>
+      </section>
 
-    <div class="footer text-center">
-        <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:40px" class="mb-2"><br>
-        ระบบเลือกตั้งประธานนักเรียนคณะสี โรงเรียนเทพศิรินทร์ นนทบุรี<br>
-        <span class="opacity-50">© ประจำปีการศึกษา 2569 : พัฒนาโดย นายกฤษณพล ทองอุ่น </span>
-        <div class="mt-4">
-            <button onclick="adminLogin()" class="btn btn-sm btn-outline-light rounded-pill px-4" style="opacity: 0.8;">
-                ผู้ดูแลระบบ
-            </button>
+      <section id="view-turnout" class="main-card glass d-none">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-2">
+          <h4 class="fw-bold text-success m-0">📈 สถิติผู้มาใช้สิทธิ์</h4>
+          <select id="publicFactionFilter" class="form-select w-auto" onchange="loadPublicParticipation()">
+            <option value="all">แสดงทุกคณะสี</option>
+            <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
+            <option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ</option>
+            <option value="คณะนิภานภดล">คณะนิภานภดล</option>
+            <option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร</option>
+            <option value="คณะภาณุรังษี">คณะภาณุรังษี</option>
+          </select>
         </div>
-    </div>
+        <div class="alert alert-info border-0 rounded-4 bg-light">แสดงเฉพาะภาพรวม เพื่อคุ้มครองข้อมูลนักเรียน</div>
+        <div id="public-turnout-container" class="row g-4"></div>
+        <div class="text-center mt-5">
+          <button class="btn btn-success rounded-pill px-4 me-2" onclick="loadPublicParticipation()">🔄 อัปเดตข้อมูล</button>
+          <button class="btn btn-light rounded-pill px-4" onclick="showView('view-welcome')">กลับหน้าหลัก</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer text-center">
+      <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:42px" class="mb-2" alt="DSN Logo"><br>
+      ระบบเลือกตั้งประธานนักเรียนคณะสี โรงเรียนเทพศิรินทร์ นนทบุรี<br>
+      <span class="opacity-75">© ประจำปีการศึกษา 2569 : พัฒนาโดย นายกฤษณพล ทองอุ่น</span>
+      <div class="mt-3"><a href="admin.html" class="btn btn-sm btn-outline-success rounded-pill px-4">ผู้ดูแลระบบ</a></div>
+    </footer>
+  </div>
 
 <script>
-    // ==============================================================
-    const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    // ==============================================================
+const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    function escapeHTML(value) {
-        return String(value ?? '').replace(/[&<>'"]/g, ch => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-        }[ch]));
+let currentFaction = '';
+let allCandidates = [];
+let isSubmittingVote = false;
+
+const factionColors = {
+  'คณะแม้นนฤมิตร': '#6f42c1',
+  'คณะเยาวมาลย์อุทิศ': '#0d6efd',
+  'คณะนิภานภดล': '#fd7e14',
+  'คณะปิยราชบพิตร': '#d63384',
+  'คณะภาณุรังษี': '#dc3545'
+};
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+function safeImageUrl(url) {
+  const s = String(url || '');
+  return /^(https?:)?\/\//i.test(s) ? escapeHTML(s) : 'https://via.placeholder.com/150';
+}
+function showView(viewId) {
+  document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('d-none'));
+  document.getElementById(viewId).classList.remove('d-none');
+}
+function showTurnoutView() {
+  showView('view-turnout');
+  loadPublicParticipation();
+}
+
+window.addEventListener('load', async () => {
+  const { data, error } = await supabaseClient.from('candidates').select('*').order('faction').order('number');
+  if (error) {
+    console.error(error);
+    Swal.fire('แจ้งเตือน', 'ไม่สามารถโหลดรายชื่อผู้สมัครได้', 'warning');
+    return;
+  }
+  allCandidates = data || [];
+});
+
+function selectFaction(name, colorName, hex) {
+  currentFaction = name;
+  document.getElementById('vote-header').style.background = `linear-gradient(135deg, ${hex}, rgba(0,0,0,.25))`;
+  document.getElementById('vote-header').innerText = `คณะสีของท่าน: ${name} (${colorName})`;
+  const list = document.getElementById('candidate-list');
+  list.innerHTML = '';
+
+  const candidates = allCandidates.filter(c => c.faction === name);
+  if (!candidates.length) {
+    list.innerHTML = '<div class="col-12 text-center text-muted py-4">ยังไม่มีข้อมูลผู้สมัครในคณะสีนี้</div>';
+  }
+
+  candidates.forEach(c => {
+    const id = escapeHTML(c.id);
+    const number = escapeHTML(c.number);
+    const cname = escapeHTML(c.name);
+    const img = safeImageUrl(c.image_url);
+    list.innerHTML += `
+      <div class="col-md-4 col-6">
+        <label class="w-100">
+          <input type="radio" name="candidate" class="candidate-radio" value="${id}">
+          <div class="candidate-box text-center p-3">
+            <img src="${img}" class="candidate-img mb-3" onerror="this.src='https://via.placeholder.com/150'" alt="รูปผู้สมัคร">
+            <h5 class="fw-bold mb-1">เบอร์ ${number}</h5>
+            <p class="small text-muted m-0">${cname}</p>
+          </div>
+        </label>
+      </div>`;
+  });
+
+  list.innerHTML += `
+    <div class="col-12 mt-3 text-center">
+      <label>
+        <input type="radio" name="candidate" class="candidate-radio" value="no_vote">
+        <div class="no-vote-box">❌ ไม่ประสงค์ลงคะแนน</div>
+      </label>
+    </div>`;
+  showView('view-voting');
+}
+
+async function submitVote() {
+  if (isSubmittingVote) return;
+
+  const tokenInput = document.getElementById('voteToken').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const voteElement = document.querySelector('input[name="candidate"]:checked');
+  const submitBtn = document.getElementById('submitVoteBtn');
+
+  if (!tokenInput || tokenInput.length !== 8 || !voteElement) {
+    return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัส Token 8 หลัก และเลือกผู้สมัคร', 'warning');
+  }
+
+  const confirmResult = await Swal.fire({
+    title: 'ยืนยันการลงคะแนน?',
+    text: `คุณกำลังใช้สิทธิ์ใน ${currentFaction}`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#006633',
+    confirmButtonText: 'ยืนยัน',
+    cancelButtonText: 'ยกเลิก'
+  });
+  if (!confirmResult.isConfirmed) return;
+
+  isSubmittingVote = true;
+  submitBtn.disabled = true;
+  submitBtn.innerText = 'กำลังบันทึก...';
+  Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+
+  try {
+    const candidateId = voteElement.value === 'no_vote' ? null : voteElement.value;
+    const { data, error } = await supabaseClient.rpc('submit_vote', {
+      p_token_code: tokenInput,
+      p_candidate_id: candidateId
+    });
+
+    if (error) throw error;
+    Swal.fire('สำเร็จ!', 'ขอบคุณที่ใช้สิทธิ์', 'success').then(() => location.reload());
+  } catch (error) {
+    console.error(error);
+    Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถบันทึกคะแนนได้', 'error');
+  } finally {
+    isSubmittingVote = false;
+    submitBtn.disabled = false;
+    submitBtn.innerText = 'ยืนยันการลงคะแนน';
+  }
+}
+
+async function loadPublicParticipation() {
+  const container = document.getElementById('public-turnout-container');
+  const filterValue = document.getElementById('publicFactionFilter').value;
+  container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-success mb-3"></div><br>กำลังโหลดข้อมูล...</div>';
+
+  try {
+    let data = null;
+    let error = null;
+
+    const rpcResult = await supabaseClient.rpc('public_turnout_summary');
+    if (rpcResult.error) {
+      const fallback = await supabaseClient.from('tokens').select('room, faction, is_used');
+      data = fallback.data;
+      error = fallback.error;
+    } else {
+      data = rpcResult.data;
+      error = null;
     }
+    if (error) throw error;
 
-    function safeImageUrl(url) {
-        const value = String(url || '').trim();
-        if (/^https?:\/\//i.test(value)) return value;
-        return 'https://via.placeholder.com/150';
-    }
+    container.innerHTML = '';
+    let displayedCount = 0;
 
-    let isSubmittingVote = false;
-    let currentFaction = ""; 
-    let allCandidates = [];
-    
-    const factionColors = {
-        'คณะแม้นนฤมิตร': '#6f42c1', 'คณะเยาวมาลย์อุทิศ': '#0d6efd',
-        'คณะนิภานภดล': '#fd7e14', 'คณะปิยราชบพิตร': '#d63384', 
-        'คณะภาณุรังษี': '#dc3545'
-    };
+    (data || []).forEach(row => {
+      const room = row.room || 'ไม่ระบุห้อง';
+      const faction = row.faction || 'ไม่ระบุคณะสี';
+      const total = Number(row.total ?? 0);
+      const voted = Number(row.voted ?? 0);
+      if (filterValue !== 'all' && faction !== filterValue) return;
 
-    function showView(viewId) {
-        document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('d-none'));
-        document.getElementById(viewId).classList.remove('d-none');
-    }
+      displayedCount++;
+      const percent = total > 0 ? Math.round((voted / total) * 100) : 0;
+      const barColor = percent >= 80 ? 'bg-success' : (percent >= 50 ? 'bg-warning text-dark' : 'bg-danger');
+      const color = factionColors[faction] || '#6c757d';
 
-    function showTurnoutView() {
-        showView('view-turnout');
-        loadPublicParticipation();
-    }
-
-    window.onload = async () => {
-        await Promise.all([loadCandidatesForVoting(), loadElectionStatus(false)]);
-        setInterval(() => loadElectionStatus(false), 60000);
-    };
-
-    async function loadCandidatesForVoting() {
-        try {
-            const { data, error } = await supabaseClient.from('candidates').select('*').order('number', { ascending: true });
-            if (error) throw error;
-            if (data) allCandidates = data;
-        } catch (err) {
-            console.error("Supabase load error:", err);
-        }
-    }
-
-    let electionStatus = null;
-
-    function formatThaiDateTime(value) {
-        if (!value) return '-';
-        return new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
-
-    async function loadElectionStatus(showAlert = false) {
-        try {
-            const { data, error } = await supabaseClient.rpc('get_election_status');
-            if (error) throw error;
-            electionStatus = data;
-            renderElectionStatus();
-            if (showAlert) Swal.fire('สถานะระบบ', data.message || 'ตรวจสอบเวลาเรียบร้อย', data.is_open ? 'success' : 'info');
-        } catch (err) {
-            console.error(err);
-            electionStatus = { is_open: false, is_enabled: false, message: 'ไม่สามารถตรวจสอบเวลาเลือกตั้งได้' };
-            renderElectionStatus();
-            if (showAlert) Swal.fire('ข้อผิดพลาด', 'ไม่สามารถตรวจสอบเวลาเลือกตั้งได้', 'error');
-        }
-    }
-
-    function renderElectionStatus() {
-        const dot = document.getElementById('electionStatusDot');
-        const text = document.getElementById('electionStatusText');
-        const time = document.getElementById('electionTimeText');
-        const btn = document.getElementById('startVotingBtn');
-        if (!dot || !text || !time || !btn) return;
-        dot.className = 'status-dot ' + (electionStatus?.is_open ? 'status-open' : (electionStatus?.is_enabled ? 'status-waiting' : 'status-closed'));
-        text.textContent = electionStatus?.message || 'ยังไม่พบสถานะการเลือกตั้ง';
-        time.textContent = `เปิด: ${formatThaiDateTime(electionStatus?.starts_at)} | ปิด: ${formatThaiDateTime(electionStatus?.ends_at)} น.`;
-        btn.disabled = !electionStatus?.is_open;
-        btn.textContent = electionStatus?.is_open ? '🗳️ เข้าสู่ระบบการลงคะแนน' : '⏳ ยังไม่ถึงเวลาเปิดลงคะแนน';
-    }
-
-    async function attemptStartVoting() {
-        await loadElectionStatus(false);
-        if (!electionStatus?.is_open) return Swal.fire('ยังไม่สามารถลงคะแนนได้', electionStatus?.message || 'ระบบยังไม่เปิดให้ลงคะแนน', 'info');
-        showView('view-factions');
-    }
-
-    function selectFaction(name, colorName, hex) {
-        currentFaction = name;
-        document.getElementById('vote-header').style.backgroundColor = hex;
-        document.getElementById('vote-header').innerText = `คณะสีของท่าน: ${name} (${colorName})`;
-        const list = document.getElementById('candidate-list'); 
-        list.innerHTML = '';
-        
-        allCandidates.filter(c => c.faction === name).forEach(c => {
-            const imgUrl = safeImageUrl(c.image_url);
-            const candidateId = escapeHTML(c.id);
-            const candidateNumber = escapeHTML(c.number);
-            const candidateName = escapeHTML(c.name);
-            list.innerHTML += `<div class="col-md-4 col-6">
-                <label class="w-100"><input type="radio" name="candidate" class="candidate-radio" value="${candidateId}">
-                <div class="candidate-box text-center">
-                    <img src="${imgUrl}" class="candidate-img" onerror="this.src='https://via.placeholder.com/150'" alt="รูปผู้สมัครเบอร์ ${candidateNumber}">
-                    <h5 class="fw-bold mb-1">เบอร์ ${candidateNumber}</h5>
-                    <p class="small text-muted m-0">${candidateName}</p>
-                </div></label></div>`;
-        });
-        
-        list.innerHTML += `
-            <div class="col-12 mt-4 text-center">
-                <label>
-                    <input type="radio" name="candidate" class="candidate-radio" value="no_vote">
-                    <div class="no-vote-box">❌ ไม่ประสงค์ลงคะแนน</div>
-                </label>
+      container.innerHTML += `
+        <div class="col-md-6">
+          <div class="room-stat-card p-3" style="border-left:6px solid ${color}">
+            <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+              <span class="fw-bold fs-5">ห้อง ${escapeHTML(room)} <span class="badge" style="background:${color}">${escapeHTML(faction)}</span></span>
+              <span class="text-muted">ใช้สิทธิ์ <b class="text-success fs-5">${voted}</b> / ${total}</span>
             </div>
-        `;
-        showView('view-voting');
-    }
+            <div class="progress" style="height:24px;border-radius:999px">
+              <div class="progress-bar ${barColor} fw-bold" style="width:${percent}%">${percent}%</div>
+            </div>
+            <div class="text-end small text-muted mt-2">แสดงเฉพาะภาพรวม</div>
+          </div>
+        </div>`;
+    });
 
-    async function submitVote() {
-        if (isSubmittingVote) return;
-        await loadElectionStatus(false);
-        if (!electionStatus?.is_open) return Swal.fire('ยังไม่สามารถลงคะแนนได้', electionStatus?.message || 'ระบบยังไม่เปิดให้ลงคะแนน', 'info');
-        const tokenInput = document.getElementById('voteToken').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-        const voteElement = document.querySelector('input[name="candidate"]:checked');
-        const submitBtn = document.getElementById('submitVoteBtn');
-        if (!tokenInput || tokenInput.length !== 8 || !voteElement) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัส Token 8 หลัก และเลือกผู้สมัคร', 'warning');
-        const confirmResult = await Swal.fire({ title: 'ยืนยันการลงคะแนน?', text: `คุณกำลังใช้สิทธิ์ใน ${currentFaction}`, icon: 'question', showCancelButton: true, confirmButtonColor: '#006633', confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' });
-        if (!confirmResult.isConfirmed) return;
-        isSubmittingVote = true;
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'กำลังบันทึก...';
-        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        try {
-            const { data, error } = await supabaseClient.rpc('submit_vote', { p_token_code: tokenInput, p_faction: currentFaction, p_candidate_id: voteElement.value === 'no_vote' ? null : voteElement.value });
-            if (error) throw error;
-            if (!data?.success) throw new Error(data?.message || 'ไม่สามารถบันทึกคะแนนได้');
-            Swal.fire('สำเร็จ!', data.message || 'ขอบคุณที่ใช้สิทธิ์', 'success').then(() => location.reload());
-        } catch (error) {
-            console.error(error);
-            Swal.fire('ไม่สำเร็จ', error.message || 'เกิดปัญหาในการเชื่อมต่อฐานข้อมูล', 'error');
-        } finally {
-            isSubmittingVote = false;
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'ยืนยันการลงคะแนน';
-        }
-    }
-
-    async function loadPublicParticipation() {
-        const container = document.getElementById('public-turnout-container');
-        const filterValue = document.getElementById('publicFactionFilter').value;
-        container.innerHTML = '<div class="col-12 text-center text-muted py-4"><div class="spinner-border text-success mb-3" role="status"></div><br>กำลังโหลดข้อมูลสถิติ...</div>';
-
-        try {
-            const { data: summaryRows, error } = await supabaseClient.rpc('public_turnout_summary');
-            
-            if (error) throw error;
-            let stats = {};
-            (summaryRows || []).forEach(t => {
-                let room = t.room || "ไม่ระบุห้อง";
-                let faction = t.faction || "ไม่ระบุคณะสี";
-                stats[room] = { total: Number(t.total || 0), voted: Number(t.voted || 0), unvoted: Number(t.total || 0) - Number(t.voted || 0), faction };
-            });
-
-            container.innerHTML = '';
-            const rooms = Object.keys(stats).sort();
-            let displayedCount = 0;
-
-            if (rooms.length === 0) {
-                container.innerHTML = '<div class="col-12 text-center text-danger">ยังไม่มีข้อมูลห้องเรียนในระบบ</div>';
-                return;
-            }
-
-            rooms.forEach(room => {
-                const roomData = stats[room];
-                const factionName = roomData.faction;
-
-                if (filterValue !== "all" && factionName !== filterValue) return;
-
-                displayedCount++;
-                const total = roomData.total;
-                const voted = roomData.voted;
-                const percent = total > 0 ? Math.round((voted / total) * 100) : 0;
-
-                let barColor = percent >= 80 ? "bg-success" : (percent >= 50 ? "bg-warning text-dark" : "bg-danger");
-                let badgeColor = factionColors[factionName] ? "" : "bg-secondary";
-
-                const safeRoom = escapeHTML(room);
-                const safeFactionName = escapeHTML(factionName);
-                container.innerHTML += `
-                    <div class="col-md-6">
-                        <div class="border rounded p-3 bg-light shadow-sm room-stat-card" style="border-left: 5px solid ${factionColors[factionName] || '#6c757d'} !important;">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold fs-5">ห้อง ${safeRoom} 
-                                    <span class="badge ms-2 ${badgeColor}" style="${badgeColor === '' ? 'background-color:'+factionColors[factionName] : ''}; font-size: 0.75rem; font-weight: normal;">
-                                        ${safeFactionName}
-                                    </span>
-                                </span>
-                                <span class="text-muted fs-6">ใช้สิทธิ์: <b class="text-success fs-5">${voted}</b> / ${total}</span>
-                            </div>
-                            <div class="progress mb-2" style="height: 25px; border-radius: 12px; background-color: #e9ecef;">
-                                <div class="progress-bar ${barColor} fw-bold" role="progressbar" style="width: ${percent}%;">${percent}%</div>
-                            </div>
-                            <div class="text-end small text-muted mt-1">แสดงเฉพาะภาพรวม เพื่อคุ้มครองข้อมูลนักเรียน</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            if (displayedCount === 0) {
-                container.innerHTML = `<div class="col-12 text-center text-muted py-4">ไม่พบข้อมูลห้องเรียนในคณะสีนี้</div>`;
-            }
-        } catch (err) {
-            console.error(err);
-            container.innerHTML = `<div class="col-12 text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>`;
-        }
-    }
-
-    // 🔴 ฟังก์ชันใหม่: ดึงข้อมูลรายชื่อนักเรียนเมื่อกดคลิกที่กล่องห้องเรียน
-    async function showRoomDetails(room, faction) {
-        const modalEl = document.getElementById('roomVoterModal');
-        const modal = new bootstrap.Modal(modalEl);
-        document.getElementById('roomModalTitle').innerHTML = `รายชื่อผู้มีสิทธิ์ <span class="text-dark">ห้อง ${room}</span>`;
-        const tbody = document.getElementById('roomVoterTableBody');
-        
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-success spinner-border-sm me-2"></div>กำลังดึงข้อมูล...</td></tr>';
-        modal.show();
-
-        try {
-            const { data, error } = await supabaseClient
-                .from('tokens')
-                .select('student_no, student_id, fullname, is_used')
-                .eq('room', room)
-                .order('student_no', { ascending: true }); // เรียงตามเลขที่
-
-            if (error) throw error;
-
-            tbody.innerHTML = '';
-            if (data && data.length > 0) {
-                data.forEach(t => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${t.student_no || '-'}</td>
-                            <td>${t.student_id || '-'}</td>
-                            <td class="text-start">${t.fullname || '-'}</td>
-                            <td>
-                                <span class="badge ${t.is_used ? 'bg-success' : 'bg-secondary'}">
-                                    ${t.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">ไม่พบข้อมูลนักเรียนห้องนี้</td></tr>';
-            }
-        } catch (err) {
-            console.error(err);
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">❌ ไม่สามารถดึงข้อมูลได้</td></tr>';
-        }
-    }
-
-    async function adminLogin() {
-        const result = await Swal.fire({
-            title: 'Admin Login',
-            html: `<input id="adminEmail" type="email" class="swal2-input" placeholder="อีเมลผู้ดูแลระบบ"><input id="adminPassword" type="password" class="swal2-input" placeholder="รหัสผ่าน">`,
-            showCancelButton: true,
-            confirmButtonColor: '#006633',
-            confirmButtonText: 'เข้าสู่ระบบ',
-            cancelButtonText: 'ยกเลิก',
-            preConfirm: () => {
-                const email = document.getElementById('adminEmail').value.trim();
-                const password = document.getElementById('adminPassword').value;
-                if (!email || !password) Swal.showValidationMessage('กรุณากรอกอีเมลและรหัสผ่าน');
-                return { email, password };
-            }
-        });
-        if (!result.isConfirmed) return;
-        Swal.fire({ title: 'กำลังเข้าสู่ระบบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        try {
-            const { error } = await supabaseClient.auth.signInWithPassword(result.value);
-            if (error) throw error;
-            const { data: isAdmin, error: adminErr } = await supabaseClient.rpc('is_admin');
-            if (adminErr || !isAdmin) { await supabaseClient.auth.signOut(); throw new Error('บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ'); }
-            location.href = 'admin.html';
-        } catch (err) {
-            Swal.fire('ไม่สำเร็จ', err.message || 'เข้าสู่ระบบไม่ได้', 'error');
-        }
-    }
+    if (!displayedCount) container.innerHTML = '<div class="col-12 text-center text-muted py-4">ไม่พบข้อมูลในคณะสีที่เลือก</div>';
+  } catch (error) {
+    console.error(error);
+    container.innerHTML = '<div class="col-12 text-center text-danger py-4">ไม่สามารถโหลดสถิติได้</div>';
+  }
+}
 </script>
 </body>
 </html>

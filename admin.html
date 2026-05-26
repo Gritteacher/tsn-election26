@@ -1,492 +1,430 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | ระบบเลือกตั้งเทพศิรินทร์ นนทบุรี</title>
-    
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-    <style>
-        body { font-family: 'Mitr', sans-serif; background-color: #f0f2f5; }
-        .sidebar { background-color: #006633; color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; }
-        .content-area { padding: 15px; }
-        .card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .btn-save { background-color: #FFCC00; color: #006633; font-weight: bold; border-radius: 10px; }
-        .table img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; }
-        
-        .menu-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; }
-        @media (min-width: 768px) {
-            .sidebar { min-height: 100vh; padding: 20px; }
-            .menu-container { flex-direction: column; overflow-x: visible; white-space: normal; }
-            .menu-container .btn { width: 100%; margin-bottom: 10px; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | ระบบเลือกตั้งเทพศิรินทร์ นนทบุรี</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --green:#006633; --yellow:#ffcc00; --glass:rgba(255,255,255,.72); --border:rgba(255,255,255,.45); }
+    body {
+      font-family:'Mitr',sans-serif;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(255,204,0,.34), transparent 30%),
+        radial-gradient(circle at 90% 0%, rgba(0,102,51,.25), transparent 32%),
+        linear-gradient(135deg,#f8fff9,#fffbea 55%,#edf8f1);
+      background-attachment: fixed;
+    }
+    .glass { background:var(--glass); border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,.10); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+    .sidebar { min-height:100vh; padding:20px; position:sticky; top:0; }
+    .sidebar-inner { border-radius:28px; padding:18px; }
+    .content-area { padding:24px; }
+    .card { border:1px solid rgba(255,255,255,.55); border-radius:24px; background:rgba(255,255,255,.72); box-shadow:0 12px 34px rgba(0,0,0,.08); }
+    .btn-save { background:linear-gradient(135deg,var(--yellow),#ffe680); color:var(--green); font-weight:700; border:0; border-radius:999px; }
+    .table img { width:50px; height:50px; border-radius:14px; object-fit:cover; }
+    .form-control,.form-select { border-radius:999px; background:rgba(255,255,255,.72); }
+    .menu-container { display:flex; flex-direction:column; gap:10px; }
+    @media (max-width:767px) {
+      .sidebar { min-height:auto; position:static; }
+      .menu-container { flex-direction:row; overflow-x:auto; white-space:nowrap; }
+      .content-area { padding:12px; }
+    }
+  </style>
 </head>
 <body>
+<div id="loginView" class="container py-5 d-none" style="max-width:520px">
+  <div class="card glass p-4 mt-5">
+    <h3 class="fw-bold text-success text-center">Admin Login</h3>
+    <p class="text-muted text-center">เข้าสู่ระบบผู้ดูแล</p>
+    <input id="loginEmail" type="email" class="form-control form-control-lg mb-3" placeholder="อีเมลผู้ดูแล">
+    <input id="loginPassword" type="password" class="form-control form-control-lg mb-3" placeholder="รหัสผ่าน">
+    <button class="btn btn-success rounded-pill w-100 py-2" onclick="loginAdmin()">เข้าสู่ระบบ</button>
+    <a href="index.html" class="btn btn-link w-100 mt-2">กลับหน้าหลัก</a>
+  </div>
+</div>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12 col-md-2 sidebar">
-            <h4 class="fw-bold mt-3 text-center">Admin Panel</h4>
-            <hr class="d-none d-md-block">
-            <div class="menu-container">
-                <button class="btn btn-light rounded-pill" onclick="switchTab('manage')">👥 จัดการผู้สมัคร</button>
-                <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
-                <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
-                <button class="btn btn-primary rounded-pill" onclick="switchTab('schedule')">⏰ ตั้งเวลาเลือกตั้ง</button>
-                <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
-                <button class="btn btn-outline-warning rounded-pill mt-md-5" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
-                <a href="index.html" class="btn btn-outline-light rounded-pill">🏠 กลับหน้าหลัก</a>
-            </div>
+<div id="adminView" class="container-fluid d-none">
+  <div class="row">
+    <div class="col-12 col-md-3 col-lg-2 sidebar">
+      <div class="sidebar-inner glass">
+        <h4 class="fw-bold text-success text-center mt-2">Admin Panel</h4>
+        <hr>
+        <div class="menu-container">
+          <button class="btn btn-light rounded-pill" onclick="switchTab('manage')">👥 จัดการผู้สมัคร</button>
+          <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
+          <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
+          <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
+          <a href="index.html" class="btn btn-outline-success rounded-pill mt-md-4">🏠 หน้าหลัก</a>
+          <button class="btn btn-outline-danger rounded-pill" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
         </div>
-
-        <div class="col-12 col-md-10 content-area">
-            
-            <div id="tab-manage">
-                <h3 class="fw-bold mb-4 text-success">จัดการข้อมูลผู้สมัคร</h3>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card p-4 mb-4">
-                            <h5 class="fw-bold mb-4">➕ เพิ่มผู้สมัคร</h5>
-                            <div class="mb-3"><label class="form-label small">คณะสี</label>
-                                <select id="faction" class="form-select rounded-pill">
-                                    <option>คณะแม้นนฤมิตร</option><option>คณะเยาวมาลย์อุทิศ</option>
-                                    <option>คณะนิภานภดล</option><option>คณะปิยราชบพิตร</option><option>คณะภาณุรังษี</option>
-                                </select>
-                            </div>
-                            <div class="row">
-                                <div class="col-4 mb-3"><label class="small">เบอร์</label><input type="number" id="number" class="form-control rounded-pill"></div>
-                                <div class="col-8 mb-3"><label class="small">ชื่อ-สกุล</label><input type="text" id="name" class="form-control rounded-pill"></div>
-                            </div>
-                            <div class="mb-4"><label class="small">รูปภาพ</label><input type="file" id="imageFile" class="form-control rounded-3" accept="image/*"></div>
-                            <button class="btn btn-save w-100 py-2" onclick="addCandidate()">บันทึกข้อมูล</button>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="card p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold m-0">📋 รายชื่อผู้สมัครปัจจุบัน</h5>
-                                <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="loadCandidates()">🔄 รีเฟรช</button>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead><tr><th>รูป</th><th>เบอร์</th><th>คณะ</th><th>ชื่อ</th><th>จัดการ</th></tr></thead>
-                                    <tbody id="table-body"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tab-score" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-bold text-success m-0">📊 สรุปผลคะแนน (Live Score)</h3>
-                    <button class="btn btn-success rounded-pill px-4" onclick="loadLiveScores()">🔄 อัปเดตล่าสุด</button>
-                </div>
-                <div class="card p-4">
-                    <select id="scoreFilter" class="form-select rounded-pill mb-4 w-auto" onchange="renderChart()">
-                        <option value="all">🏆 คะแนนรวมทุกคณะสี</option>
-                        <option value="คณะแม้นนฤมิตร">💜 คณะแม้นนฤมิตร</option>
-                        <option value="คณะเยาวมาลย์อุทิศ">💙 คณะเยาวมาลย์อุทิศ</option>
-                        <option value="คณะนิภานภดล">🧡 คณะนิภานภดล</option>
-                        <option value="คณะปิยราชบพิตร">💗 คณะปิยราชบพิตร</option>
-                        <option value="คณะภาณุรังษี">❤️ คณะภาณุรังษี</option>
-                    </select>
-                    <div style="height: 450px;"><canvas id="scoreChart"></canvas></div>
-                </div>
-            </div>
-
-            <div id="tab-turnout" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-bold text-info m-0">📈 สถิติผู้มาใช้สิทธิ์ (Turnout)</h3>
-                    <button class="btn btn-info text-white rounded-pill px-4" onclick="loadParticipation()">🔄 อัปเดตสถิติ</button>
-                </div>
-                <div class="card p-4">
-                    <select id="turnoutFilter" class="form-select rounded-pill mb-4 w-auto" onchange="loadParticipation()">
-                        <option value="all">แสดงทุกคณะสี</option>
-                        <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
-                        <option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ</option>
-                        <option value="คณะนิภานภดล">คณะนิภานภดล</option>
-                        <option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร</option>
-                        <option value="คณะภาณุรังษี">คณะภาณุรังษี</option>
-                    </select>
-                    <div id="turnout-container" class="row g-3"></div>
-                </div>
-            </div>
-
-
-            <div id="tab-schedule" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold text-primary m-0">⏰ ตั้งเวลาเปิด-ปิดการลงคะแนน</h3><button class="btn btn-primary rounded-pill px-4" onclick="loadElectionSettings()">🔄 โหลดค่าปัจจุบัน</button></div>
-                <div class="card p-4">
-                    <div id="scheduleStatus" class="alert alert-light border rounded-4 mb-4">กำลังโหลดสถานะ...</div>
-                    <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label fw-bold">วันและเวลาเปิดลงคะแนน</label><input type="datetime-local" id="votingStartAt" class="form-control"><div class="form-text">ใช้เวลาตามประเทศไทย (Asia/Bangkok)</div></div>
-                        <div class="col-md-6"><label class="form-label fw-bold">วันและเวลาปิดลงคะแนน</label><input type="datetime-local" id="votingEndAt" class="form-control"><div class="form-text">เมื่อถึงเวลาปิด ระบบจะไม่รับคะแนนใหม่</div></div>
-                        <div class="col-12"><div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" role="switch" id="votingEnabled"><label class="form-check-label fw-bold" for="votingEnabled">เปิดใช้งานระบบลงคะแนนตามช่วงเวลาที่กำหนด</label></div></div>
-                        <div class="col-12 d-flex gap-2 flex-wrap mt-3"><button class="btn btn-save px-4" onclick="saveElectionSettings()">💾 บันทึกเวลา</button><button class="btn btn-outline-success px-4" onclick="setDefaultElectionTime()">ตั้งค่า 4 มิ.ย. 2569 เวลา 08:00-15:30</button><button class="btn btn-outline-danger px-4" onclick="closeVotingNow()">ปิดรับคะแนนทันที</button></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tab-voters" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-bold text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
-                    <button class="btn btn-secondary rounded-pill px-4" onclick="loadVoters()">🔄 อัปเดตข้อมูล</button>
-                </div>
-                <div class="card p-4">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle text-center">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>เลขประจำตัว</th>
-                                    <th>เลขที่</th>
-                                    <th>ชื่อ - สกุล</th>
-                                    <th>คณะสี</th>
-                                    <th>ห้อง</th>
-                                    <th>สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="voterTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+      </div>
     </div>
+
+    <div class="col-12 col-md-9 col-lg-10 content-area">
+      <div id="tab-manage">
+        <h3 class="fw-bold mb-4 text-success">จัดการข้อมูลผู้สมัคร</h3>
+        <div class="row g-4">
+          <div class="col-lg-4">
+            <div class="card p-4">
+              <h5 class="fw-bold mb-3">➕ เพิ่มผู้สมัคร</h5>
+              <label class="form-label small">คณะสี</label>
+              <select id="faction" class="form-select mb-3">
+                <option>คณะแม้นนฤมิตร</option><option>คณะเยาวมาลย์อุทิศ</option>
+                <option>คณะนิภานภดล</option><option>คณะปิยราชบพิตร</option><option>คณะภาณุรังษี</option>
+              </select>
+              <div class="row">
+                <div class="col-4"><label class="small">เบอร์</label><input type="number" id="number" class="form-control mb-3"></div>
+                <div class="col-8"><label class="small">ชื่อ-สกุล</label><input type="text" id="name" class="form-control mb-3"></div>
+              </div>
+              <label class="small">รูปภาพ</label><input type="file" id="imageFile" class="form-control rounded-4 mb-4" accept="image/*">
+              <button class="btn btn-save w-100 py-2" onclick="addCandidate()">บันทึกข้อมูล</button>
+            </div>
+          </div>
+          <div class="col-lg-8">
+            <div class="card p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0">📋 รายชื่อผู้สมัครปัจจุบัน</h5>
+                <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="loadCandidates()">🔄 รีเฟรช</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead><tr><th>รูป</th><th>เบอร์</th><th>คณะ</th><th>ชื่อ</th><th>จัดการ</th></tr></thead>
+                  <tbody id="table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-score" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="fw-bold text-success m-0">📊 สรุปผลคะแนน</h3>
+          <button class="btn btn-success rounded-pill px-4" onclick="loadLiveScores()">🔄 อัปเดตล่าสุด</button>
+        </div>
+        <div class="card p-4">
+          <select id="scoreFilter" class="form-select mb-4 w-auto" onchange="renderChart()">
+            <option value="all">🏆 คะแนนรวมทุกคณะสี</option>
+            <option value="คณะแม้นนฤมิตร">💜 คณะแม้นนฤมิตร</option>
+            <option value="คณะเยาวมาลย์อุทิศ">💙 คณะเยาวมาลย์อุทิศ</option>
+            <option value="คณะนิภานภดล">🧡 คณะนิภานภดล</option>
+            <option value="คณะปิยราชบพิตร">💗 คณะปิยราชบพิตร</option>
+            <option value="คณะภาณุรังษี">❤️ คณะภาณุรังษี</option>
+          </select>
+          <div style="height:450px"><canvas id="scoreChart"></canvas></div>
+        </div>
+      </div>
+
+      <div id="tab-turnout" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="fw-bold text-info m-0">📈 สถิติผู้มาใช้สิทธิ์</h3>
+          <button class="btn btn-info text-white rounded-pill px-4" onclick="loadParticipation()">🔄 อัปเดตสถิติ</button>
+        </div>
+        <div class="card p-4">
+          <select id="turnoutFilter" class="form-select mb-4 w-auto" onchange="loadParticipation()">
+            <option value="all">แสดงทุกคณะสี</option>
+            <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
+            <option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ</option>
+            <option value="คณะนิภานภดล">คณะนิภานภดล</option>
+            <option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร</option>
+            <option value="คณะภาณุรังษี">คณะภาณุรังษี</option>
+          </select>
+          <div id="turnout-container" class="row g-3"></div>
+        </div>
+      </div>
+
+      <div id="tab-voters" class="d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="fw-bold text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
+          <button class="btn btn-secondary rounded-pill px-4" onclick="loadVoters()">🔄 อัปเดตข้อมูล</button>
+        </div>
+        <div class="card p-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle text-center">
+              <thead><tr><th>เลขประจำตัว</th><th>เลขที่</th><th>ชื่อ - สกุล</th><th>คณะสี</th><th>ห้อง</th><th>สถานะ</th></tr></thead>
+              <tbody id="voterTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-    // ==============================================================
-    const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
-    
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    // ==============================================================
+const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let myChart = null;
-    let latestScores = null;
-    const factionColors = { 'คณะแม้นนฤมิตร': '#6f42c1', 'คณะเยาวมาลย์อุทิศ': '#0d6efd', 'คณะนิภานภดล': '#fd7e14', 'คณะปิยราชบพิตร': '#d63384', 'คณะภาณุรังษี': '#dc3545', 'งดออกเสียง': '#6c757d' };
+let myChart = null;
+let latestScores = null;
+const factionColors = {
+  'คณะแม้นนฤมิตร':'#6f42c1','คณะเยาวมาลย์อุทิศ':'#0d6efd',
+  'คณะนิภานภดล':'#fd7e14','คณะปิยราชบพิตร':'#d63384',
+  'คณะภาณุรังษี':'#dc3545','งดออกเสียง':'#6c757d'
+};
 
-    function escapeHTML(value) {
-        return String(value ?? '').replace(/[&<>'"]/g, ch => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-        }[ch]));
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+function safeImageUrl(url) { return /^(https?:)?\/\//i.test(String(url||'')) ? escapeHTML(url) : 'https://via.placeholder.com/50'; }
+
+window.addEventListener('load', initAdmin);
+
+async function initAdmin() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) {
+    document.getElementById('loginView').classList.remove('d-none');
+    return;
+  }
+  const ok = await checkAdmin(session.user);
+  if (!ok) {
+    await supabaseClient.auth.signOut();
+    document.getElementById('loginView').classList.remove('d-none');
+    Swal.fire('ไม่สำเร็จ','บัญชีนี้ไม่ได้อยู่ในรายการผู้ดูแล','error');
+    return;
+  }
+  document.getElementById('adminView').classList.remove('d-none');
+  loadCandidates();
+}
+
+async function checkAdmin(user) {
+  const { data, error } = await supabaseClient
+    .from('admin_users')
+    .select('user_id,email')
+    .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+    .maybeSingle();
+  return !!data && !error;
+}
+
+async function loginAdmin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return Swal.fire('แจ้งเตือน','กรุณากรอกอีเมลและรหัสผ่าน','warning');
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) return Swal.fire('ไม่สำเร็จ', error.message, 'error');
+
+  const ok = await checkAdmin(data.user);
+  if (!ok) {
+    await supabaseClient.auth.signOut();
+    return Swal.fire('ไม่สำเร็จ','บัญชีนี้ไม่ได้อยู่ในรายการผู้ดูแล','error');
+  }
+  location.reload();
+}
+
+async function logoutAdmin() {
+  await supabaseClient.auth.signOut();
+  location.href = 'index.html';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('d-none'));
+  document.getElementById(`tab-${tab}`).classList.remove('d-none');
+  if(tab === 'score') loadLiveScores();
+  if(tab === 'turnout') loadParticipation();
+  if(tab === 'voters') loadVoters();
+}
+
+async function loadCandidates() {
+  const body = document.getElementById('table-body');
+  body.innerHTML = '<tr><td colspan="5" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+  try {
+    const { data, error } = await supabaseClient.from('candidates').select('*').order('faction').order('number');
+    if (error) throw error;
+    body.innerHTML = '';
+    if (!data?.length) {
+      body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีข้อมูลผู้สมัคร</td></tr>';
+      return;
+    }
+    data.forEach(c => {
+      body.innerHTML += `<tr>
+        <td><img src="${safeImageUrl(c.image_url)}" onerror="this.src='https://via.placeholder.com/50'"></td>
+        <td>${escapeHTML(c.number)}</td>
+        <td>${escapeHTML(c.faction)}</td>
+        <td>${escapeHTML(c.name)}</td>
+        <td><button class="btn btn-sm btn-danger rounded-pill" onclick="deleteCandidate('${escapeHTML(c.id)}')">ลบ</button></td>
+      </tr>`;
+    });
+  } catch (error) {
+    console.error(error);
+    body.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">${escapeHTML(error.message || 'ไม่สามารถโหลดข้อมูลได้')}</td></tr>`;
+  }
+}
+
+async function addCandidate() {
+  const file = document.getElementById('imageFile').files[0];
+  const num = document.getElementById('number').value.trim();
+  const name = document.getElementById('name').value.trim();
+  const faction = document.getElementById('faction').value;
+  if (!num || !name) return Swal.fire('แจ้งเตือน','กรอกข้อมูลให้ครบ','warning');
+  if (file && !file.type.startsWith('image/')) return Swal.fire('แจ้งเตือน','กรุณาเลือกรูปภาพเท่านั้น','warning');
+  if (file && file.size > 2 * 1024 * 1024) return Swal.fire('แจ้งเตือน','รูปภาพต้องไม่เกิน 2MB','warning');
+
+  Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+  try {
+    let imgUrl = '';
+    if (file) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileName = `${Date.now()}_${safeName}`;
+      const { error: uploadErr } = await supabaseClient.storage.from('candidate-images').upload(fileName, file);
+      if (uploadErr) throw uploadErr;
+      imgUrl = supabaseClient.storage.from('candidate-images').getPublicUrl(fileName).data.publicUrl;
+    }
+    const { error } = await supabaseClient.from('candidates').insert([{
+      number: Number(num), name, faction, image_url: imgUrl
+    }]);
+    if (error) throw error;
+    Swal.fire('สำเร็จ','เพิ่มผู้สมัครเรียบร้อยแล้ว','success');
+    document.getElementById('number').value = '';
+    document.getElementById('name').value = '';
+    document.getElementById('imageFile').value = '';
+    loadCandidates();
+  } catch (error) {
+    console.error(error);
+    Swal.fire('ไม่สำเร็จ', error.message || 'บันทึกไม่สำเร็จ', 'error');
+  }
+}
+
+async function deleteCandidate(id) {
+  const { isConfirmed } = await Swal.fire({ title:'ยืนยันการลบ?', icon:'warning', showCancelButton:true, confirmButtonColor:'#d33' });
+  if (!isConfirmed) return;
+  const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
+  if (error) return Swal.fire('ไม่สำเร็จ', error.message, 'error');
+  Swal.fire('สำเร็จ','ลบผู้สมัครแล้ว','success');
+  loadCandidates();
+}
+
+async function loadLiveScores() {
+  const { data: votes, error } = await supabaseClient.from('votes').select('candidate_id, candidates(faction, number, name)');
+  if (error) return Swal.fire('ไม่สำเร็จ', error.message, 'error');
+
+  const stats = { 'งดออกเสียง': 0 };
+  (votes || []).forEach(v => {
+    if (!v.candidate_id) stats['งดออกเสียง']++;
+    else if (v.candidates) {
+      const f = v.candidates.faction;
+      const n = `เบอร์ ${v.candidates.number}`;
+      if (!stats[f]) stats[f] = {};
+      stats[f][n] = (stats[f][n] || 0) + 1;
+    }
+  });
+  Object.keys(factionColors).forEach(f => { if (f !== 'งดออกเสียง' && !stats[f]) stats[f] = {}; });
+  latestScores = stats;
+  renderChart();
+}
+
+function renderChart() {
+  if (!latestScores) return;
+  const scores = latestScores;
+  const filter = document.getElementById('scoreFilter').value;
+  const ctx = document.getElementById('scoreChart').getContext('2d');
+  let labels = [], dataPoints = [], bgColors = [];
+
+  if (filter === 'all') {
+    Object.keys(factionColors).forEach(f => {
+      labels.push(window.innerWidth < 768 ? f.replace('คณะ','') : f);
+      const total = f === 'งดออกเสียง' ? (scores[f] || 0) : Object.values(scores[f] || {}).reduce((a,b)=>a+b,0);
+      dataPoints.push(total);
+      bgColors.push(factionColors[f]);
+    });
+  } else {
+    Object.keys(scores[filter] || {}).forEach(c => {
+      labels.push(c); dataPoints.push(scores[filter][c]); bgColors.push(factionColors[filter]);
+    });
+  }
+
+  if (myChart) myChart.destroy();
+  Chart.register(ChartDataLabels);
+  myChart = new Chart(ctx, {
+    type:'bar',
+    data: { labels, datasets:[{ data:dataPoints, backgroundColor:bgColors, borderRadius:12 }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { display:false },
+        datalabels: { color:'white', anchor:'end', align:'start', font:{ family:'Mitr', weight:'bold', size:18 }, display:c=>c.dataset.data[c.dataIndex]>0 }
+      }
+    }
+  });
+}
+
+async function loadParticipation() {
+  const container = document.getElementById('turnout-container');
+  const filter = document.getElementById('turnoutFilter').value;
+  container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-info mb-3"></div><br>กำลังโหลด...</div>';
+
+  try {
+    let { data, error } = await supabaseClient.rpc('public_turnout_summary');
+    if (error) {
+      const fallback = await supabaseClient.from('tokens').select('room, faction, is_used');
+      if (fallback.error) throw fallback.error;
+      const stats = {};
+      fallback.data.forEach(t => {
+        const room = t.room || 'ไม่ระบุห้อง';
+        const faction = t.faction || 'ไม่ระบุ';
+        if (!stats[room]) stats[room] = { room, faction, total:0, voted:0 };
+        stats[room].total++;
+        if (t.is_used) stats[room].voted++;
+      });
+      data = Object.values(stats);
     }
 
-    function safeImageUrl(url) {
-        const value = String(url || '').trim();
-        if (/^https?:\/\//i.test(value)) return value;
-        return 'https://via.placeholder.com/45';
+    container.innerHTML = '';
+    let count = 0;
+    (data || []).forEach(s => {
+      if (filter !== 'all' && s.faction !== filter) return;
+      count++;
+      const total = Number(s.total || 0);
+      const voted = Number(s.voted || 0);
+      const percent = total ? Math.round((voted/total)*100) : 0;
+      const color = factionColors[s.faction] || '#ccc';
+      const barColor = percent >= 80 ? 'bg-success' : (percent >= 50 ? 'bg-warning text-dark' : 'bg-danger');
+      container.innerHTML += `<div class="col-md-4"><div class="card p-3" style="border-left:6px solid ${color}">
+        <div class="fw-bold">${escapeHTML(s.room)} <small class="badge bg-secondary">${escapeHTML(String(s.faction).replace('คณะ',''))}</small></div>
+        <div class="progress my-2" style="height:20px"><div class="progress-bar ${barColor}" style="width:${percent}%">${percent}%</div></div>
+        <div class="small text-muted d-flex justify-content-between"><span>ใช้สิทธิ์แล้ว <b>${voted}</b>/${total}</span><span>ขาด ${total-voted}</span></div>
+      </div></div>`;
+    });
+    if (!count) container.innerHTML = '<div class="col-12 text-center text-muted py-4">ไม่พบข้อมูล</div>';
+  } catch (error) {
+    console.error(error);
+    container.innerHTML = `<div class="col-12 text-center text-danger">${escapeHTML(error.message || 'โหลดไม่ได้')}</div>`;
+  }
+}
+
+async function loadVoters() {
+  const body = document.getElementById('voterTableBody');
+  body.innerHTML = '<tr><td colspan="6" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+  try {
+    const { data, error } = await supabaseClient.from('tokens').select('*').order('room').order('student_no');
+    if (error) throw error;
+    body.innerHTML = '';
+    if (!data?.length) {
+      body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ยังไม่มีข้อมูลนักเรียน</td></tr>';
+      return;
     }
-
-    async function ensureAdminAccess() {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) { location.replace('index.html'); return false; }
-        const { data: isAdmin, error } = await supabaseClient.rpc('is_admin');
-        if (error || !isAdmin) { await supabaseClient.auth.signOut(); location.replace('index.html'); return false; }
-        return true;
-    }
-
-    async function logoutAdmin() {
-        await supabaseClient.auth.signOut();
-        location.href = 'index.html';
-    }
-
-    window.onload = async () => {
-        const ok = await ensureAdminAccess();
-        if (!ok) return;
-        loadCandidates();
-    };
-
-    function switchTab(tab) {
-        document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('d-none'));
-        document.getElementById(`tab-${tab}`).classList.remove('d-none');
-        if(tab === 'score') loadLiveScores();
-        if(tab === 'turnout') loadParticipation();
-        if(tab === 'schedule') loadElectionSettings();
-        if(tab === 'voters') loadVoters(); // โหลดข้อมูลเมื่อเปิดแท็บใหม่
-    }
-
-
-
-    function toDatetimeLocal(value) {
-        if (!value) return '';
-        const date = new Date(value);
-        const bangkok = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        const pad = n => String(n).padStart(2, '0');
-        return `${bangkok.getFullYear()}-${pad(bangkok.getMonth()+1)}-${pad(bangkok.getDate())}T${pad(bangkok.getHours())}:${pad(bangkok.getMinutes())}`;
-    }
-    function bangkokLocalToIso(localValue) { return localValue ? `${localValue}:00+07:00` : null; }
-    function formatThaiDateTime(value) { if (!value) return '-'; return new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    async function loadElectionSettings() {
-        const box = document.getElementById('scheduleStatus');
-        if (box) box.innerHTML = 'กำลังโหลดสถานะ...';
-        try {
-            const { data, error } = await supabaseClient.rpc('get_election_status');
-            if (error) throw error;
-            document.getElementById('votingStartAt').value = toDatetimeLocal(data.starts_at);
-            document.getElementById('votingEndAt').value = toDatetimeLocal(data.ends_at);
-            document.getElementById('votingEnabled').checked = !!data.is_enabled;
-            const badge = data.is_open ? 'success' : (data.is_enabled ? 'warning text-dark' : 'danger');
-            box.className = `alert alert-${badge} border rounded-4 mb-4`;
-            box.innerHTML = `<b>สถานะ:</b> ${escapeHTML(data.message || '-')}<br><span class="small">เปิด ${formatThaiDateTime(data.starts_at)} | ปิด ${formatThaiDateTime(data.ends_at)} น.</span>`;
-        } catch (err) { console.error(err); if (box) { box.className = 'alert alert-danger border rounded-4 mb-4'; box.innerHTML = 'ไม่สามารถโหลดค่าการตั้งเวลาได้'; } }
-    }
-    async function saveElectionSettings() {
-        const startLocal = document.getElementById('votingStartAt').value;
-        const endLocal = document.getElementById('votingEndAt').value;
-        const enabled = document.getElementById('votingEnabled').checked;
-        if (!startLocal || !endLocal) return Swal.fire('แจ้งเตือน', 'กรุณากำหนดเวลาเปิดและเวลาปิด', 'warning');
-        if (new Date(endLocal) <= new Date(startLocal)) return Swal.fire('แจ้งเตือน', 'เวลาปิดต้องอยู่หลังเวลาเปิด', 'warning');
-        Swal.fire({ title: 'กำลังบันทึกเวลา...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        try {
-            const { data, error } = await supabaseClient.rpc('update_election_settings', { p_starts_at: bangkokLocalToIso(startLocal), p_ends_at: bangkokLocalToIso(endLocal), p_is_enabled: enabled });
-            if (error) throw error;
-            if (!data?.success) throw new Error(data?.message || 'ไม่สามารถบันทึกเวลาได้');
-            await loadElectionSettings();
-            Swal.fire('สำเร็จ', 'บันทึกเวลาเลือกตั้งเรียบร้อย', 'success');
-        } catch (err) { console.error(err); Swal.fire('ไม่สำเร็จ', err.message || 'บันทึกเวลาไม่ได้', 'error'); }
-    }
-    function setDefaultElectionTime() { document.getElementById('votingStartAt').value = '2026-06-04T08:00'; document.getElementById('votingEndAt').value = '2026-06-04T15:30'; document.getElementById('votingEnabled').checked = true; }
-    function closeVotingNow() {
-        const now = new Date(); const pad = n => String(n).padStart(2, '0');
-        document.getElementById('votingEndAt').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-        document.getElementById('votingEnabled').checked = false; saveElectionSettings();
-    }
-
-    async function loadCandidates() {
-        const body = document.getElementById('table-body');
-        body.innerHTML = '<tr><td colspan="5" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
-        
-        try {
-            const { data, error } = await supabaseClient.from('candidates').select('*').order('faction').order('number');
-            if (error) throw error;
-
-            body.innerHTML = '';
-            if (data && data.length > 0) {
-                data.forEach(c => {
-                    const id = escapeHTML(c.id);
-                    const img = safeImageUrl(c.image_url);
-                    body.innerHTML += `<tr>
-                        <td><img src="${img}" alt="รูปผู้สมัคร" onerror="this.src='https://via.placeholder.com/45'"></td>
-                        <td>${escapeHTML(c.number)}</td>
-                        <td>${escapeHTML(c.faction)}</td>
-                        <td>${escapeHTML(c.name)}</td>
-                        <td><button class="btn btn-sm btn-danger rounded-pill" onclick="deleteCandidate('${id}')">ลบ</button></td>
-                    </tr>`;
-                });
-            } else {
-                body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีข้อมูลผู้สมัครในระบบ</td></tr>';
-            }
-        } catch (err) {
-            console.error(err);
-            body.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้</td></tr>';
-        }
-    }
-
-    async function addCandidate() {
-        const file = document.getElementById('imageFile').files[0];
-        const num = document.getElementById('number').value;
-        const name = document.getElementById('name').value;
-        const faction = document.getElementById('faction').value;
-
-        if(!num || !name) return Swal.fire('แจ้งเตือน','กรอกข้อมูลให้ครบ','warning');
-        if(file && !file.type.startsWith('image/')) return Swal.fire('แจ้งเตือน','ไฟล์รูปภาพไม่ถูกต้อง','warning');
-        if(file && file.size > 2 * 1024 * 1024) return Swal.fire('แจ้งเตือน','ขนาดรูปภาพต้องไม่เกิน 2MB','warning');
-        Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
-
-        try {
-            let imgUrl = "";
-            if(file) {
-                const fileName = `${Date.now()}_${file.name}`;
-                const { data: uploadData, error: uploadErr } = await supabaseClient.storage.from('candidate-images').upload(fileName, file);
-                if(uploadErr) throw uploadErr;
-                imgUrl = supabaseClient.storage.from('candidate-images').getPublicUrl(fileName).data.publicUrl;
-            }
-
-            const { error: insErr } = await supabaseClient.from('candidates').insert([{ number: num, name, faction, image_url: imgUrl }]);
-            if(insErr) throw insErr;
-
-            Swal.fire('สำเร็จ!','เพิ่มผู้สมัครเรียบร้อยแล้ว','success');
-            document.getElementById('number').value = '';
-            document.getElementById('name').value = '';
-            document.getElementById('imageFile').value = '';
-            loadCandidates();
-        } catch (e) {
-            Swal.fire('Error', e.message, 'error');
-        }
-    }
-
-    async function deleteCandidate(id) {
-        const { isConfirmed } = await Swal.fire({ title:'ยืนยันการลบ?', text:'เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลผู้สมัครจากหน้านี้ได้', icon:'warning', showCancelButton:true, confirmButtonColor: '#d33', confirmButtonText:'ลบ', cancelButtonText:'ยกเลิก' });
-        if(isConfirmed) {
-            const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
-            if (error) return Swal.fire('Error', error.message, 'error');
-            Swal.fire('ลบแล้ว', 'ลบผู้สมัครเรียบร้อย', 'success');
-            loadCandidates();
-        }
-    }
-
-    async function loadLiveScores() {
-        const { data: votes, error } = await supabaseClient.from('votes').select('candidate_id, candidates(faction, number, name)');
-        if (error) {
-            console.error(error);
-            return Swal.fire('Error', 'ไม่สามารถดึงผลคะแนนได้', 'error');
-        }
-
-        let stats = { "งดออกเสียง": 0 };
-        
-        if (votes) {
-            votes.forEach(v => {
-                if(!v.candidate_id) stats["งดออกเสียง"]++;
-                else if (v.candidates) {
-                    const f = v.candidates.faction;
-                    const n = `เบอร์ ${v.candidates.number}`;
-                    if(!stats[f]) stats[f] = {};
-                    stats[f][n] = (stats[f][n] || 0) + 1;
-                }
-            });
-        }
-        Object.keys(factionColors).forEach(f => {
-            if (f !== "งดออกเสียง" && !stats[f]) stats[f] = {};
-        });
-        latestScores = stats;
-        renderChart();
-    }
-
-    function renderChart() {
-        const scores = latestScores;
-        if (!scores) return;
-        const filter = document.getElementById('scoreFilter').value;
-        const ctx = document.getElementById('scoreChart').getContext('2d');
-        let labels = [], dataPoints = [], bgColors = [];
-
-        if(filter === "all") {
-            Object.keys(factionColors).forEach(f => {
-                labels.push(window.innerWidth < 768 ? f.replace('คณะ', '') : f);
-                let total = f === "งดออกเสียง" ? (scores[f] || 0) : Object.values(scores[f] || {}).reduce((a,b) => a+b, 0);
-                dataPoints.push(total);
-                bgColors.push(factionColors[f]);
-            });
-        } else {
-            const fData = scores[filter] || {};
-            Object.keys(fData).forEach(cand => {
-                labels.push(cand);
-                dataPoints.push(fData[cand]);
-                bgColors.push(factionColors[filter]);
-            });
-        }
-
-        if(myChart) myChart.destroy();
-        Chart.register(ChartDataLabels);
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets: [{ data: dataPoints, backgroundColor: bgColors, borderRadius: 10 }] },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                layout: { padding: { top: 30 } },
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { color: 'white', rotation: -90, anchor: 'end', align: 'start', font: { family: 'Mitr', weight: 'bold', size: 20 }, display: (c) => c.dataset.data[c.dataIndex] > 0 }
-                }
-            }
-        });
-    }
-
-    async function loadParticipation() {
-        const container = document.getElementById('turnout-container');
-        container.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border text-info mb-3"></div><br>กำลังโหลด...</div>';
-        
-        const { data: summaryRows, error } = await supabaseClient.rpc('public_turnout_summary');
-        const filter = document.getElementById('turnoutFilter').value;
-        container.innerHTML = '';
-
-        if (error) {
-            container.innerHTML = '<div class="col-12 text-center text-danger">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
-            return;
-        }
-        let stats = {};
-        if (summaryRows) {
-            summaryRows.forEach(t => {
-                let room = t.room || "ไม่ระบุห้อง";
-                stats[room] = { total: Number(t.total || 0), voted: Number(t.voted || 0), faction: t.faction || "ไม่ระบุ" };
-            });
-        }
-
-        const rooms = Object.keys(stats).sort();
-        if (rooms.length === 0) {
-            container.innerHTML = '<div class="col-12 text-center text-muted py-4">ยังไม่มีข้อมูลห้องเรียนในระบบ (ตาราง Tokens ว่างเปล่า)</div>';
-            return;
-        }
-
-        let count = 0;
-        rooms.forEach(room => {
-            const s = stats[room];
-            if(filter !== 'all' && s.faction !== filter) return;
-            count++;
-            const percent = s.total > 0 ? Math.round((s.voted / s.total) * 100) : 0;
-            let barColor = percent >= 80 ? "bg-success" : (percent >= 50 ? "bg-warning text-dark" : "bg-danger");
-            
-            const safeRoom = escapeHTML(room);
-            const safeFaction = escapeHTML((s.faction || '').replace('คณะ', ''));
-            container.innerHTML += `<div class="col-md-4"><div class="card p-3 shadow-sm border-0" style="border-left: 5px solid ${factionColors[s.faction] || '#ccc'} !important;">
-                <div class="fw-bold">${safeRoom} <small class="badge bg-secondary opacity-75">${safeFaction}</small></div>
-                <div class="progress my-2" style="height:20px"><div class="progress-bar ${barColor}" style="width:${percent}%">${percent}%</div></div>
-                <div class="small text-muted d-flex justify-content-between">
-                    <span>ใช้สิทธิ์แล้ว <b class="text-dark">${s.voted}</b>/${s.total}</span>
-                    <span class="text-danger">ขาด ${s.total - s.voted}</span>
-                </div>
-            </div></div>`;
-        });
-        
-        if (count === 0) container.innerHTML = '<div class="col-12 text-center text-muted py-4">ไม่พบห้องเรียนในคณะสีที่เลือก</div>';
-    }
-
-    // ฟังก์ชันใหม่ สำหรับโหลดรายชื่อนักเรียน
-    async function loadVoters() {
-        const body = document.getElementById('voterTableBody');
-        body.innerHTML = '<tr><td colspan="6" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
-        
-        try {
-            // ดึงข้อมูลเรียงตามห้องและเลขที่
-            const { data, error } = await supabaseClient.from('tokens').select('*').order('room').order('student_no');
-            if (error) throw error;
-
-            body.innerHTML = '';
-            if (data && data.length > 0) {
-                data.forEach(t => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${escapeHTML(t.student_id || '-')}</td>
-                        <td>${escapeHTML(t.student_no || '-')}</td>
-                        <td class="text-start">${escapeHTML(t.fullname || '-')}</td>
-                        <td>${escapeHTML(t.faction || '-')}</td>
-                        <td>${escapeHTML(t.room || '-')}</td>
-                        <td>
-                            <span class="badge ${t.is_used ? 'bg-success' : 'bg-secondary'}">
-                                ${t.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}
-                            </span>
-                        </td>
-                    `;
-                    body.appendChild(tr);
-                });
-            } else {
-                body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ยังไม่มีข้อมูลนักเรียนในระบบ</td></tr>';
-            }
-        } catch (err) {
-            console.error(err);
-            body.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">❌ ไม่สามารถดึงข้อมูลได้</td></tr>';
-        }
-    }
+    data.forEach(t => {
+      body.innerHTML += `<tr>
+        <td>${escapeHTML(t.student_id || '-')}</td>
+        <td>${escapeHTML(t.student_no || '-')}</td>
+        <td class="text-start">${escapeHTML(t.fullname || '-')}</td>
+        <td>${escapeHTML(t.faction || '-')}</td>
+        <td>${escapeHTML(t.room || '-')}</td>
+        <td><span class="badge ${t.is_used ? 'bg-success':'bg-secondary'}">${t.is_used ? 'ใช้สิทธิ์แล้ว':'ยังไม่ใช้สิทธิ์'}</span></td>
+      </tr>`;
+    });
+  } catch (error) {
+    console.error(error);
+    body.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHTML(error.message || 'ไม่สามารถดึงข้อมูลได้')}</td></tr>`;
+  }
+}
 </script>
 </body>
 </html>
