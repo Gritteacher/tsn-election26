@@ -28,14 +28,6 @@
             .menu-container .btn { width: 100%; margin-bottom: 10px; }
         }
     </style>
-
-    <script>
-        const ADMIN_SESSION_KEY = 'dsn_admin_ok';
-        if (sessionStorage.getItem(ADMIN_SESSION_KEY) !== '1') {
-            location.replace('index.html');
-        }
-    </script>
-
 </head>
 <body>
 
@@ -48,6 +40,7 @@
                 <button class="btn btn-light rounded-pill" onclick="switchTab('manage')">👥 จัดการผู้สมัคร</button>
                 <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
                 <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
+                <button class="btn btn-primary rounded-pill" onclick="switchTab('schedule')">⏰ ตั้งเวลาเลือกตั้ง</button>
                 <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
                 <button class="btn btn-outline-warning rounded-pill mt-md-5" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
                 <a href="index.html" class="btn btn-outline-light rounded-pill">🏠 กลับหน้าหลัก</a>
@@ -129,6 +122,20 @@
                 </div>
             </div>
 
+
+            <div id="tab-schedule" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold text-primary m-0">⏰ ตั้งเวลาเปิด-ปิดการลงคะแนน</h3><button class="btn btn-primary rounded-pill px-4" onclick="loadElectionSettings()">🔄 โหลดค่าปัจจุบัน</button></div>
+                <div class="card p-4">
+                    <div id="scheduleStatus" class="alert alert-light border rounded-4 mb-4">กำลังโหลดสถานะ...</div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label fw-bold">วันและเวลาเปิดลงคะแนน</label><input type="datetime-local" id="votingStartAt" class="form-control"><div class="form-text">ใช้เวลาตามประเทศไทย (Asia/Bangkok)</div></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">วันและเวลาปิดลงคะแนน</label><input type="datetime-local" id="votingEndAt" class="form-control"><div class="form-text">เมื่อถึงเวลาปิด ระบบจะไม่รับคะแนนใหม่</div></div>
+                        <div class="col-12"><div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" role="switch" id="votingEnabled"><label class="form-check-label fw-bold" for="votingEnabled">เปิดใช้งานระบบลงคะแนนตามช่วงเวลาที่กำหนด</label></div></div>
+                        <div class="col-12 d-flex gap-2 flex-wrap mt-3"><button class="btn btn-save px-4" onclick="saveElectionSettings()">💾 บันทึกเวลา</button><button class="btn btn-outline-success px-4" onclick="setDefaultElectionTime()">ตั้งค่า 4 มิ.ย. 2569 เวลา 08:00-15:30</button><button class="btn btn-outline-danger px-4" onclick="closeVotingNow()">ปิดรับคะแนนทันที</button></div>
+                    </div>
+                </div>
+            </div>
+
             <div id="tab-voters" class="d-none">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="fw-bold text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
@@ -181,19 +188,79 @@
         return 'https://via.placeholder.com/45';
     }
 
-    function logoutAdmin() {
-        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    async function ensureAdminAccess() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) { location.replace('index.html'); return false; }
+        const { data: isAdmin, error } = await supabaseClient.rpc('is_admin');
+        if (error || !isAdmin) { await supabaseClient.auth.signOut(); location.replace('index.html'); return false; }
+        return true;
+    }
+
+    async function logoutAdmin() {
+        await supabaseClient.auth.signOut();
         location.href = 'index.html';
     }
 
-    window.onload = () => { loadCandidates(); };
+    window.onload = async () => {
+        const ok = await ensureAdminAccess();
+        if (!ok) return;
+        loadCandidates();
+    };
 
     function switchTab(tab) {
         document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('d-none'));
         document.getElementById(`tab-${tab}`).classList.remove('d-none');
         if(tab === 'score') loadLiveScores();
         if(tab === 'turnout') loadParticipation();
+        if(tab === 'schedule') loadElectionSettings();
         if(tab === 'voters') loadVoters(); // โหลดข้อมูลเมื่อเปิดแท็บใหม่
+    }
+
+
+
+    function toDatetimeLocal(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        const bangkok = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        const pad = n => String(n).padStart(2, '0');
+        return `${bangkok.getFullYear()}-${pad(bangkok.getMonth()+1)}-${pad(bangkok.getDate())}T${pad(bangkok.getHours())}:${pad(bangkok.getMinutes())}`;
+    }
+    function bangkokLocalToIso(localValue) { return localValue ? `${localValue}:00+07:00` : null; }
+    function formatThaiDateTime(value) { if (!value) return '-'; return new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    async function loadElectionSettings() {
+        const box = document.getElementById('scheduleStatus');
+        if (box) box.innerHTML = 'กำลังโหลดสถานะ...';
+        try {
+            const { data, error } = await supabaseClient.rpc('get_election_status');
+            if (error) throw error;
+            document.getElementById('votingStartAt').value = toDatetimeLocal(data.starts_at);
+            document.getElementById('votingEndAt').value = toDatetimeLocal(data.ends_at);
+            document.getElementById('votingEnabled').checked = !!data.is_enabled;
+            const badge = data.is_open ? 'success' : (data.is_enabled ? 'warning text-dark' : 'danger');
+            box.className = `alert alert-${badge} border rounded-4 mb-4`;
+            box.innerHTML = `<b>สถานะ:</b> ${escapeHTML(data.message || '-')}<br><span class="small">เปิด ${formatThaiDateTime(data.starts_at)} | ปิด ${formatThaiDateTime(data.ends_at)} น.</span>`;
+        } catch (err) { console.error(err); if (box) { box.className = 'alert alert-danger border rounded-4 mb-4'; box.innerHTML = 'ไม่สามารถโหลดค่าการตั้งเวลาได้'; } }
+    }
+    async function saveElectionSettings() {
+        const startLocal = document.getElementById('votingStartAt').value;
+        const endLocal = document.getElementById('votingEndAt').value;
+        const enabled = document.getElementById('votingEnabled').checked;
+        if (!startLocal || !endLocal) return Swal.fire('แจ้งเตือน', 'กรุณากำหนดเวลาเปิดและเวลาปิด', 'warning');
+        if (new Date(endLocal) <= new Date(startLocal)) return Swal.fire('แจ้งเตือน', 'เวลาปิดต้องอยู่หลังเวลาเปิด', 'warning');
+        Swal.fire({ title: 'กำลังบันทึกเวลา...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const { data, error } = await supabaseClient.rpc('update_election_settings', { p_starts_at: bangkokLocalToIso(startLocal), p_ends_at: bangkokLocalToIso(endLocal), p_is_enabled: enabled });
+            if (error) throw error;
+            if (!data?.success) throw new Error(data?.message || 'ไม่สามารถบันทึกเวลาได้');
+            await loadElectionSettings();
+            Swal.fire('สำเร็จ', 'บันทึกเวลาเลือกตั้งเรียบร้อย', 'success');
+        } catch (err) { console.error(err); Swal.fire('ไม่สำเร็จ', err.message || 'บันทึกเวลาไม่ได้', 'error'); }
+    }
+    function setDefaultElectionTime() { document.getElementById('votingStartAt').value = '2026-06-04T08:00'; document.getElementById('votingEndAt').value = '2026-06-04T15:30'; document.getElementById('votingEnabled').checked = true; }
+    function closeVotingNow() {
+        const now = new Date(); const pad = n => String(n).padStart(2, '0');
+        document.getElementById('votingEndAt').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        document.getElementById('votingEnabled').checked = false; saveElectionSettings();
     }
 
     async function loadCandidates() {
@@ -339,7 +406,7 @@
         const container = document.getElementById('turnout-container');
         container.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border text-info mb-3"></div><br>กำลังโหลด...</div>';
         
-        const { data: tokens, error } = await supabaseClient.from('tokens').select('*');
+        const { data: summaryRows, error } = await supabaseClient.rpc('public_turnout_summary');
         const filter = document.getElementById('turnoutFilter').value;
         container.innerHTML = '';
 
@@ -347,14 +414,11 @@
             container.innerHTML = '<div class="col-12 text-center text-danger">เกิดข้อผิดพลาดในการดึงข้อมูล</div>';
             return;
         }
-
         let stats = {};
-        if (tokens) {
-            tokens.forEach(t => {
+        if (summaryRows) {
+            summaryRows.forEach(t => {
                 let room = t.room || "ไม่ระบุห้อง";
-                if(!stats[room]) stats[room] = { total: 0, voted: 0, faction: t.faction || "ไม่ระบุ" };
-                stats[room].total++;
-                if(t.is_used) stats[room].voted++;
+                stats[room] = { total: Number(t.total || 0), voted: Number(t.voted || 0), faction: t.faction || "ไม่ระบุ" };
             });
         }
 

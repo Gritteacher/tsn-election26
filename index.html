@@ -41,6 +41,11 @@
         /* CSS สำหรับกล่องสถิติ */
         .room-stat-card { transition: all 0.2s ease; border: 1px solid transparent; }
         .room-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.08) !important; }
+        .election-status-card { border: 1px solid rgba(255,255,255,.6); border-radius: 18px; background: rgba(255,255,255,.72); backdrop-filter: blur(18px); box-shadow: 0 12px 30px rgba(0,102,51,.10); }
+        .status-dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; margin-right: 8px; }
+        .status-open { background: #198754; box-shadow: 0 0 0 6px rgba(25,135,84,.12); }
+        .status-closed { background: #dc3545; box-shadow: 0 0 0 6px rgba(220,53,69,.12); }
+        .status-waiting { background: #ffc107; box-shadow: 0 0 0 6px rgba(255,193,7,.16); }
     </style>
 </head>
 <body>
@@ -64,9 +69,19 @@
             <div class="alert alert-warning border-0 rounded-4 p-3 mb-4 mx-auto" style="max-width: 600px; font-size: 0.9rem;">
                 <b>คำเตือน:</b> โปรดใช้สิทธิ์ด้วยความซื่อสัตย์สุจริต หากพบการทุจริต คณะกรรมการจะดำเนินการตามระเบียบสูงสุด
             </div>
+
+            <div id="electionStatusBox" class="election-status-card p-3 mb-4 mx-auto text-start" style="max-width: 640px;">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="fw-bold"><span id="electionStatusDot" class="status-dot status-waiting"></span><span id="electionStatusText">กำลังตรวจสอบเวลาเปิดลงคะแนน...</span></div>
+                        <div id="electionTimeText" class="small text-muted mt-1">กรุณารอสักครู่</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-success rounded-pill" onclick="loadElectionStatus(true)">🔄 ตรวจสอบเวลา</button>
+                </div>
+            </div>
             
             <div class="d-flex flex-column align-items-center gap-3">
-                <button class="btn btn-dsn btn-lg px-5 w-100" style="max-width: 350px;" onclick="showView('view-factions')">🗳️ เข้าสู่ระบบการลงคะแนน</button>
+                <button class="btn btn-dsn btn-lg px-5 w-100" style="max-width: 350px;" id="startVotingBtn" onclick="attemptStartVoting()">🗳️ เข้าสู่ระบบการลงคะแนน</button>
                 <button class="btn btn-outline-success btn-lg px-5 w-100 bg-light" style="max-width: 350px; border-width: 2px;" onclick="showTurnoutView()">📈 ดูสถิติผู้มาใช้สิทธิ์ (Live)</button>
             </div>
             </div>
@@ -169,7 +184,6 @@
     const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const ADMIN_SESSION_KEY = 'dsn_admin_ok';
     // ==============================================================
 
     function escapeHTML(value) {
@@ -205,13 +219,60 @@
     }
 
     window.onload = async () => {
+        await Promise.all([loadCandidatesForVoting(), loadElectionStatus(false)]);
+        setInterval(() => loadElectionStatus(false), 60000);
+    };
+
+    async function loadCandidatesForVoting() {
         try {
             const { data, error } = await supabaseClient.from('candidates').select('*').order('number', { ascending: true });
+            if (error) throw error;
             if (data) allCandidates = data;
         } catch (err) {
             console.error("Supabase load error:", err);
         }
-    };
+    }
+
+    let electionStatus = null;
+
+    function formatThaiDateTime(value) {
+        if (!value) return '-';
+        return new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadElectionStatus(showAlert = false) {
+        try {
+            const { data, error } = await supabaseClient.rpc('get_election_status');
+            if (error) throw error;
+            electionStatus = data;
+            renderElectionStatus();
+            if (showAlert) Swal.fire('สถานะระบบ', data.message || 'ตรวจสอบเวลาเรียบร้อย', data.is_open ? 'success' : 'info');
+        } catch (err) {
+            console.error(err);
+            electionStatus = { is_open: false, is_enabled: false, message: 'ไม่สามารถตรวจสอบเวลาเลือกตั้งได้' };
+            renderElectionStatus();
+            if (showAlert) Swal.fire('ข้อผิดพลาด', 'ไม่สามารถตรวจสอบเวลาเลือกตั้งได้', 'error');
+        }
+    }
+
+    function renderElectionStatus() {
+        const dot = document.getElementById('electionStatusDot');
+        const text = document.getElementById('electionStatusText');
+        const time = document.getElementById('electionTimeText');
+        const btn = document.getElementById('startVotingBtn');
+        if (!dot || !text || !time || !btn) return;
+        dot.className = 'status-dot ' + (electionStatus?.is_open ? 'status-open' : (electionStatus?.is_enabled ? 'status-waiting' : 'status-closed'));
+        text.textContent = electionStatus?.message || 'ยังไม่พบสถานะการเลือกตั้ง';
+        time.textContent = `เปิด: ${formatThaiDateTime(electionStatus?.starts_at)} | ปิด: ${formatThaiDateTime(electionStatus?.ends_at)} น.`;
+        btn.disabled = !electionStatus?.is_open;
+        btn.textContent = electionStatus?.is_open ? '🗳️ เข้าสู่ระบบการลงคะแนน' : '⏳ ยังไม่ถึงเวลาเปิดลงคะแนน';
+    }
+
+    async function attemptStartVoting() {
+        await loadElectionStatus(false);
+        if (!electionStatus?.is_open) return Swal.fire('ยังไม่สามารถลงคะแนนได้', electionStatus?.message || 'ระบบยังไม่เปิดให้ลงคะแนน', 'info');
+        showView('view-factions');
+    }
 
     function selectFaction(name, colorName, hex) {
         currentFaction = name;
@@ -247,85 +308,23 @@
 
     async function submitVote() {
         if (isSubmittingVote) return;
-
+        await loadElectionStatus(false);
+        if (!electionStatus?.is_open) return Swal.fire('ยังไม่สามารถลงคะแนนได้', electionStatus?.message || 'ระบบยังไม่เปิดให้ลงคะแนน', 'info');
         const tokenInput = document.getElementById('voteToken').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
         const voteElement = document.querySelector('input[name="candidate"]:checked');
         const submitBtn = document.getElementById('submitVoteBtn');
-        
-        if (!tokenInput || tokenInput.length !== 8 || !voteElement) {
-            return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัส Token 8 หลัก และเลือกผู้สมัคร', 'warning');
-        }
-
-        const confirmResult = await Swal.fire({
-            title: 'ยืนยันการลงคะแนน?',
-            text: `คุณกำลังใช้สิทธิ์ใน ${currentFaction}`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#006633',
-            confirmButtonText: 'ยืนยัน',
-            cancelButtonText: 'ยกเลิก'
-        });
-
+        if (!tokenInput || tokenInput.length !== 8 || !voteElement) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัส Token 8 หลัก และเลือกผู้สมัคร', 'warning');
+        const confirmResult = await Swal.fire({ title: 'ยืนยันการลงคะแนน?', text: `คุณกำลังใช้สิทธิ์ใน ${currentFaction}`, icon: 'question', showCancelButton: true, confirmButtonColor: '#006633', confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก' });
         if (!confirmResult.isConfirmed) return;
-
         isSubmittingVote = true;
         submitBtn.disabled = true;
         submitBtn.innerText = 'กำลังบันทึก...';
         Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        
         try {
-            const { data: tokenData, error: tokenErr } = await supabaseClient
-                .from('tokens')
-                .select('token_code, faction, is_used')
-                .eq('token_code', tokenInput)
-                .single();
-
-            if (tokenErr || !tokenData) {
-                throw new Error('รหัส Token ไม่ถูกต้อง ไม่มีในระบบ');
-            }
-            if (tokenData.is_used) {
-                throw new Error('รหัส Token นี้ถูกใช้ลงคะแนนไปแล้ว');
-            }
-            if (tokenData.faction !== currentFaction) {
-                throw new Error(`รหัส Token นี้เป็นของ ${tokenData.faction} ไม่สามารถใช้ลงคะแนนใน ${currentFaction}`);
-            }
-
-            let voteInsertData = { token_code: tokenInput, candidate_id: null };
-
-            if (voteElement.value !== 'no_vote') {
-                const { data: candidateData, error: candidateErr } = await supabaseClient
-                    .from('candidates')
-                    .select('id, faction')
-                    .eq('id', voteElement.value)
-                    .single();
-
-                if (candidateErr || !candidateData) {
-                    throw new Error('ไม่พบข้อมูลผู้สมัครที่เลือก');
-                }
-                if (candidateData.faction !== currentFaction) {
-                    throw new Error('ผู้สมัครที่เลือกไม่ตรงกับคณะสีของ Token');
-                }
-
-                voteInsertData.candidate_id = candidateData.id;
-            }
-
-            const { data: updatedToken, error: updateErr } = await supabaseClient
-                .from('tokens')
-                .update({ is_used: true })
-                .eq('token_code', tokenInput)
-                .eq('is_used', false)
-                .select('token_code')
-                .single();
-
-            if (updateErr || !updatedToken) {
-                throw new Error('Token นี้อาจถูกใช้งานไปแล้ว กรุณาตรวจสอบอีกครั้ง');
-            }
-            
-            const { error: insertErr } = await supabaseClient.from('votes').insert([voteInsertData]);
-            if (insertErr) throw insertErr;
-
-            Swal.fire('สำเร็จ!', 'ขอบคุณที่ใช้สิทธิ์', 'success').then(() => location.reload());
-
+            const { data, error } = await supabaseClient.rpc('submit_vote', { p_token_code: tokenInput, p_faction: currentFaction, p_candidate_id: voteElement.value === 'no_vote' ? null : voteElement.value });
+            if (error) throw error;
+            if (!data?.success) throw new Error(data?.message || 'ไม่สามารถบันทึกคะแนนได้');
+            Swal.fire('สำเร็จ!', data.message || 'ขอบคุณที่ใช้สิทธิ์', 'success').then(() => location.reload());
         } catch (error) {
             console.error(error);
             Swal.fire('ไม่สำเร็จ', error.message || 'เกิดปัญหาในการเชื่อมต่อฐานข้อมูล', 'error');
@@ -342,19 +341,14 @@
         container.innerHTML = '<div class="col-12 text-center text-muted py-4"><div class="spinner-border text-success mb-3" role="status"></div><br>กำลังโหลดข้อมูลสถิติ...</div>';
 
         try {
-            const { data: tokens, error } = await supabaseClient.from('tokens').select('room, faction, is_used');
+            const { data: summaryRows, error } = await supabaseClient.rpc('public_turnout_summary');
             
             if (error) throw error;
-
             let stats = {};
-            tokens.forEach(t => {
+            (summaryRows || []).forEach(t => {
                 let room = t.room || "ไม่ระบุห้อง";
                 let faction = t.faction || "ไม่ระบุคณะสี";
-                if (!stats[room]) stats[room] = { total: 0, voted: 0, unvoted: 0, faction: faction };
-                
-                stats[room].total++;
-                if (t.is_used) stats[room].voted++;
-                else stats[room].unvoted++;
+                stats[room] = { total: Number(t.total || 0), voted: Number(t.voted || 0), unvoted: Number(t.total || 0) - Number(t.voted || 0), faction };
             });
 
             container.innerHTML = '';
@@ -455,23 +449,32 @@
         }
     }
 
-    function adminLogin() {
-        Swal.fire({
+    async function adminLogin() {
+        const result = await Swal.fire({
             title: 'Admin Login',
-            input: 'password',
-            inputPlaceholder: 'กรอกรหัสผ่านผู้ดูแลระบบ',
+            html: `<input id="adminEmail" type="email" class="swal2-input" placeholder="อีเมลผู้ดูแลระบบ"><input id="adminPassword" type="password" class="swal2-input" placeholder="รหัสผ่าน">`,
             showCancelButton: true,
             confirmButtonColor: '#006633',
             confirmButtonText: 'เข้าสู่ระบบ',
-            cancelButtonText: 'ยกเลิก'
-        }).then(r => {
-            if (r.value === '014dd2544d82') {
-                sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
-                location.href = 'admin.html';
-            } else if (r.value) {
-                Swal.fire('ไม่สำเร็จ', 'รหัสผ่านไม่ถูกต้อง', 'error');
+            cancelButtonText: 'ยกเลิก',
+            preConfirm: () => {
+                const email = document.getElementById('adminEmail').value.trim();
+                const password = document.getElementById('adminPassword').value;
+                if (!email || !password) Swal.showValidationMessage('กรุณากรอกอีเมลและรหัสผ่าน');
+                return { email, password };
             }
         });
+        if (!result.isConfirmed) return;
+        Swal.fire({ title: 'กำลังเข้าสู่ระบบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const { error } = await supabaseClient.auth.signInWithPassword(result.value);
+            if (error) throw error;
+            const { data: isAdmin, error: adminErr } = await supabaseClient.rpc('is_admin');
+            if (adminErr || !isAdmin) { await supabaseClient.auth.signOut(); throw new Error('บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ'); }
+            location.href = 'admin.html';
+        } catch (err) {
+            Swal.fire('ไม่สำเร็จ', err.message || 'เข้าสู่ระบบไม่ได้', 'error');
+        }
     }
 </script>
 </body>
