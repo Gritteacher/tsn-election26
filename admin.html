@@ -140,11 +140,58 @@
       </div>
 
       <div id="tab-voters" class="d-none">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-2">
           <h3 class="fw-bold text-secondary m-0">📋 ตรวจสอบรายชื่อผู้ใช้สิทธิ์</h3>
-          <button class="btn btn-secondary rounded-pill px-4" onclick="loadVoters()">🔄 อัปเดตข้อมูล</button>
+          <button class="btn btn-secondary rounded-pill px-4" onclick="resetVoterFiltersAndLoad()">🔄 อัปเดตข้อมูล</button>
         </div>
+        <div class="card p-4 mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">ค้นหาชื่อ/เลขประจำตัว</label>
+              <input id="voterSearchInput" class="form-control" placeholder="พิมพ์คำค้นหา" onkeydown="if(event.key==='Enter') loadVoters(1)">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">ห้อง</label>
+              <select id="voterRoomFilter" class="form-select" onchange="loadVoters(1)">
+                <option value="all">ทุกห้อง</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">คณะสี</label>
+              <select id="voterFactionFilter" class="form-select" onchange="loadVoters(1)">
+                <option value="all">ทุกคณะสี</option>
+                <option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option>
+                <option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ</option>
+                <option value="คณะนิภานภดล">คณะนิภานภดล</option>
+                <option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร</option>
+                <option value="คณะภาณุรังษี">คณะภาณุรังษี</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-bold">สถานะ</label>
+              <select id="voterStatusFilter" class="form-select" onchange="loadVoters(1)">
+                <option value="all">ทั้งหมด</option>
+                <option value="used">ใช้สิทธิ์แล้ว</option>
+                <option value="unused">ยังไม่ใช้สิทธิ์</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-grid">
+              <button class="btn btn-success rounded-pill" onclick="loadVoters(1)">ค้นหา</button>
+            </div>
+          </div>
+          <div class="small text-muted mt-3">
+            ระบบจะแสดงทีละ 100 รายชื่อ เพื่อลดอาการหน้าเว็บค้าง
+          </div>
+        </div>
+
         <div class="card p-4">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div id="voterSummaryText" class="fw-bold text-secondary">ยังไม่ได้โหลดข้อมูล</div>
+            <div class="d-flex gap-2">
+              <button id="voterPrevBtn" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="loadVoters(voterCurrentPage - 1)">ก่อนหน้า</button>
+              <button id="voterNextBtn" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="loadVoters(voterCurrentPage + 1)">ถัดไป</button>
+            </div>
+          </div>
           <div class="table-responsive">
             <table class="table table-hover align-middle text-center">
               <thead><tr><th>เลขประจำตัว</th><th>เลขที่</th><th>ชื่อ - สกุล</th><th>คณะสี</th><th>ห้อง</th><th>สถานะ</th></tr></thead>
@@ -229,7 +276,7 @@ function switchTab(tab) {
   document.getElementById(`tab-${tab}`).classList.remove('d-none');
   if(tab === 'score') loadLiveScores();
   if(tab === 'turnout') loadParticipation();
-  if(tab === 'voters') loadVoters();
+  if(tab === 'voters') loadVoters(1);
 }
 
 async function loadCandidates() {
@@ -399,32 +446,131 @@ async function loadParticipation() {
   }
 }
 
-async function loadVoters() {
-  const body = document.getElementById('voterTableBody');
-  body.innerHTML = '<tr><td colspan="6" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+
+let voterCurrentPage = 1;
+const voterPageSize = 100;
+let voterRoomsLoaded = false;
+
+async function loadVoterRoomOptions() {
+  if (voterRoomsLoaded) return;
+  const select = document.getElementById('voterRoomFilter');
+  if (!select) return;
+
   try {
-    const { data, error } = await supabaseClient.from('tokens').select('*').order('room').order('student_no');
+    const { data, error } = await supabaseClient
+      .from('tokens')
+      .select('room')
+      .not('room', 'is', null)
+      .order('room', { ascending: true });
+
     if (error) throw error;
-    body.innerHTML = '';
-    if (!data?.length) {
-      body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ยังไม่มีข้อมูลนักเรียน</td></tr>';
-      return;
-    }
-    data.forEach(t => {
-      body.innerHTML += `<tr>
-        <td>${escapeHTML(t.student_id || '-')}</td>
-        <td>${escapeHTML(t.student_no || '-')}</td>
-        <td class="text-start">${escapeHTML(t.fullname || '-')}</td>
-        <td>${escapeHTML(t.faction || '-')}</td>
-        <td>${escapeHTML(t.room || '-')}</td>
-        <td><span class="badge ${t.is_used ? 'bg-success':'bg-secondary'}">${t.is_used ? 'ใช้สิทธิ์แล้ว':'ยังไม่ใช้สิทธิ์'}</span></td>
-      </tr>`;
+
+    const rooms = [...new Set((data || []).map(r => r.room).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'th'));
+    select.innerHTML = '<option value="all">ทุกห้อง</option>';
+    rooms.forEach(room => {
+      const opt = document.createElement('option');
+      opt.value = room;
+      opt.textContent = room;
+      select.appendChild(opt);
     });
+    voterRoomsLoaded = true;
   } catch (error) {
-    console.error(error);
-    body.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHTML(error.message || 'ไม่สามารถดึงข้อมูลได้')}</td></tr>`;
+    console.error('loadVoterRoomOptions error:', error);
   }
 }
+
+function resetVoterFiltersAndLoad() {
+  const search = document.getElementById('voterSearchInput');
+  const room = document.getElementById('voterRoomFilter');
+  const faction = document.getElementById('voterFactionFilter');
+  const status = document.getElementById('voterStatusFilter');
+  if (search) search.value = '';
+  if (room) room.value = 'all';
+  if (faction) faction.value = 'all';
+  if (status) status.value = 'all';
+  loadVoters(1);
+}
+
+async function loadVoters(page = 1) {
+  await loadVoterRoomOptions();
+
+  const body = document.getElementById('voterTableBody');
+  const summary = document.getElementById('voterSummaryText');
+  const prevBtn = document.getElementById('voterPrevBtn');
+  const nextBtn = document.getElementById('voterNextBtn');
+
+  if (!body) return;
+
+  voterCurrentPage = Math.max(1, Number(page) || 1);
+  const from = (voterCurrentPage - 1) * voterPageSize;
+  const to = from + voterPageSize - 1;
+
+  const searchValue = (document.getElementById('voterSearchInput')?.value || '').trim();
+  const roomValue = document.getElementById('voterRoomFilter')?.value || 'all';
+  const factionValue = document.getElementById('voterFactionFilter')?.value || 'all';
+  const statusValue = document.getElementById('voterStatusFilter')?.value || 'all';
+
+  body.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-secondary me-2"></div>กำลังโหลดข้อมูล...</td></tr>';
+  if (summary) summary.textContent = 'กำลังโหลด...';
+  if (prevBtn) prevBtn.disabled = true;
+  if (nextBtn) nextBtn.disabled = true;
+
+  try {
+    let query = supabaseClient
+      .from('tokens')
+      .select('student_id, student_no, fullname, faction, room, is_used', { count: 'exact' })
+      .order('room', { ascending: true })
+      .order('student_no', { ascending: true })
+      .range(from, to);
+
+    if (roomValue !== 'all') query = query.eq('room', roomValue);
+    if (factionValue !== 'all') query = query.eq('faction', factionValue);
+    if (statusValue === 'used') query = query.eq('is_used', true);
+    if (statusValue === 'unused') query = query.eq('is_used', false);
+
+    if (searchValue) {
+      // ค้นหาแบบ OR เฉพาะคอลัมน์ที่เป็นข้อความ
+      const safe = searchValue.replace(/[%(),]/g, '');
+      query = query.or(`student_id.ilike.%${safe}%,fullname.ilike.%${safe}%,room.ilike.%${safe}%`);
+    }
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    body.innerHTML = '';
+    if (!data || data.length === 0) {
+      body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
+    } else {
+      const rows = data.map(t => `
+        <tr>
+          <td>${escapeHTML(t.student_id || '-')}</td>
+          <td>${escapeHTML(t.student_no || '-')}</td>
+          <td class="text-start">${escapeHTML(t.fullname || '-')}</td>
+          <td>${escapeHTML(t.faction || '-')}</td>
+          <td>${escapeHTML(t.room || '-')}</td>
+          <td><span class="badge ${t.is_used ? 'bg-success' : 'bg-secondary'}">${t.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}</span></td>
+        </tr>
+      `).join('');
+      body.innerHTML = rows;
+    }
+
+    const total = count || 0;
+    const startItem = total === 0 ? 0 : from + 1;
+    const endItem = Math.min(to + 1, total);
+    const totalPages = Math.max(1, Math.ceil(total / voterPageSize));
+
+    if (summary) summary.textContent = `แสดง ${startItem}-${endItem} จากทั้งหมด ${total} รายชื่อ | หน้า ${voterCurrentPage}/${totalPages}`;
+    if (prevBtn) prevBtn.disabled = voterCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = voterCurrentPage >= totalPages;
+  } catch (error) {
+    console.error('loadVoters error:', error);
+    body.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escapeHTML(error.message || 'ไม่สามารถดึงข้อมูลได้')}</td></tr>`;
+    if (summary) summary.textContent = 'โหลดข้อมูลไม่สำเร็จ';
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+  }
+}
+
 </script>
 </body>
 </html>
