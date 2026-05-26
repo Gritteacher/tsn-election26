@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --green: #006633;
@@ -39,14 +39,14 @@
     }
     .top-nav {
       margin: 18px auto 0;
-      max-width: 980px;
+      max-width: 1100px;
       border-radius: 28px;
       padding: 16px 18px;
     }
     .top-nav img { width: 64px; filter: drop-shadow(0 6px 14px rgba(0,0,0,.18)); }
     .main-card {
-      border-radius: 30px;
-      padding: 28px;
+      border-radius: 32px;
+      padding: 30px;
       overflow: hidden;
       animation: fadeIn .45s ease;
     }
@@ -61,7 +61,127 @@
       box-shadow: 0 12px 24px rgba(0,102,51,.22);
     }
     .btn-dsn:hover { color: white; transform: translateY(-1px); }
-    .faction-item, .candidate-box, .room-stat-card {
+    .faction-grid-title {
+      font-size: clamp(1.9rem, 2.8vw, 2.8rem);
+      font-weight: 700;
+      text-align: center;
+      color: #0b2c1e;
+      margin-bottom: 10px;
+    }
+    .faction-grid-subtitle {
+      text-align: center;
+      color: #5c6c63;
+      margin-bottom: 28px;
+    }
+    .faction-item {
+      position: relative;
+      border-radius: 28px;
+      padding: 18px;
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(255,255,255,.65);
+      box-shadow: 0 18px 40px rgba(0,0,0,.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: transform .25s ease, box-shadow .25s ease;
+      cursor: pointer;
+      overflow: hidden;
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .faction-item:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 24px 48px rgba(0,0,0,.14);
+    }
+    .faction-item::after {
+      content: '';
+      position: absolute;
+      inset: auto -30px -30px auto;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      filter: blur(6px);
+    }
+    .faction-top {
+      position: relative;
+      z-index: 1;
+      border-radius: 24px;
+      padding: 18px 16px 20px;
+      color: white;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .faction-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.24);
+      font-size: 1.45rem;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.12);
+    }
+    .faction-name {
+      font-weight: 700;
+      font-size: 1.55rem;
+      line-height: 1.22;
+      margin-bottom: 8px;
+    }
+    .faction-color-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .92rem;
+      font-weight: 500;
+      background: rgba(255,255,255,.16);
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.2);
+    }
+    .faction-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.18);
+    }
+    .faction-bottom {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 18px;
+    }
+    .faction-bottom-text small {
+      display: block;
+      color: #7b877f;
+      font-size: .88rem;
+      margin-bottom: 3px;
+    }
+    .faction-bottom-text b {
+      color: #143825;
+      font-size: 1.18rem;
+    }
+    .faction-cta {
+      flex-shrink: 0;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      color: #0b2c1e;
+      background: linear-gradient(135deg, #ffffff, #f1f4f1);
+      box-shadow: 0 10px 24px rgba(0,0,0,.08);
+      min-width: 132px;
+      transition: transform .2s ease;
+    }
+    .faction-item:hover .faction-cta { transform: translateX(2px); }
+    .candidate-box, .room-stat-card {
       border-radius: 24px;
       border: 1px solid rgba(255,255,255,.55);
       background: rgba(255,255,255,.68);
@@ -71,14 +191,7 @@
       cursor: pointer;
       box-shadow: 0 12px 30px rgba(0,0,0,.08);
     }
-    .faction-item:hover, .candidate-box:hover, .room-stat-card:hover { transform: translateY(-4px); }
-    .faction-header {
-      margin: -1px -1px 16px;
-      border-radius: 24px 24px 14px 14px;
-      padding: 14px 10px;
-      color: white;
-      font-weight: 600;
-    }
+    .candidate-box:hover, .room-stat-card:hover { transform: translateY(-4px); }
     .candidate-img {
       width: 124px;
       height: 124px;
@@ -114,6 +227,18 @@
       padding: 36px 0 28px;
       font-size: .92rem;
     }
+    @media (max-width: 991px) {
+      .faction-item { min-height: 210px; }
+      .faction-name { font-size: 1.35rem; }
+    }
+    @media (max-width: 576px) {
+      .main-card { padding: 22px; }
+      .faction-item { min-height: 200px; padding: 14px; }
+      .faction-top { padding: 16px 14px 18px; }
+      .faction-icon { width: 48px; height: 48px; border-radius: 16px; font-size: 1.25rem; }
+      .faction-bottom { flex-direction: column; align-items: stretch; gap: 12px; }
+      .faction-cta { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -126,7 +251,7 @@
       </div>
     </div>
 
-    <main class="mx-auto my-4" style="max-width: 980px;">
+    <main class="mx-auto my-4" style="max-width: 1100px;">
       <section id="view-welcome" class="main-card glass text-center">
         <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" style="width:120px" class="mb-3" alt="DSN Logo">
         <h2 class="fw-bold">ยินดีต้อนรับสู่ระบบเลือกตั้ง</h2>
@@ -141,13 +266,78 @@
       </section>
 
       <section id="view-factions" class="main-card glass d-none">
-        <h4 class="text-center fw-bold mb-4">เลือกคณะสีของท่าน</h4>
+        <div class="faction-grid-title">เลือกคณะสีของท่าน</div>
+        <div class="faction-grid-subtitle">เลือกคณะสีให้ตรงกับสิทธิ์ของท่าน เพื่อเข้าสู่หน้าลงคะแนน</div>
         <div class="row g-4">
-          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะแม้นนฤมิตร','สีม่วง','#6f42c1')"><div class="faction-header" style="background:#6f42c1">คณะแม้นนฤมิตร</div><b>เลือกตั้ง</b></div></div>
-          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะเยาวมาลย์อุทิศ','สีน้ำเงิน','#0d6efd')"><div class="faction-header" style="background:#0d6efd">คณะเยาวมาลย์อุทิศ</div><b>เลือกตั้ง</b></div></div>
-          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะนิภานภดล','สีแสด','#fd7e14')"><div class="faction-header" style="background:#fd7e14">คณะนิภานภดล</div><b>เลือกตั้ง</b></div></div>
-          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะปิยราชบพิตร','สีชมพู','#d63384')"><div class="faction-header" style="background:#d63384">คณะปิยราชบพิตร</div><b>เลือกตั้ง</b></div></div>
-          <div class="col-md-4 col-6"><div class="faction-item text-center h-100" onclick="selectFaction('คณะภาณุรังษี','สีแดง','#dc3545')"><div class="faction-header" style="background:#dc3545">คณะภาณุรังษี</div><b>เลือกตั้ง</b></div></div>
+          <div class="col-lg-4 col-md-6">
+            <div class="faction-item" onclick="selectFaction('คณะแม้นนฤมิตร','สีม่วง','#6f42c1')">
+              <div class="faction-top" style="background:linear-gradient(135deg,#7d50da,#683bbd)">
+                <div class="faction-icon">💜</div>
+                <div class="faction-name">คณะแม้นนฤมิตร</div>
+                <div class="faction-color-label"><span class="faction-color-dot"></span> สีม่วง</div>
+              </div>
+              <div class="faction-bottom">
+                <div class="faction-bottom-text"><small>สำหรับผู้มีสิทธิ์คณะสีนี้</small><b>เข้าสู่คูหาเลือกตั้ง</b></div>
+                <button class="faction-cta">เลือกคณะนี้ →</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <div class="faction-item" onclick="selectFaction('คณะเยาวมาลย์อุทิศ','สีน้ำเงิน','#0d6efd')">
+              <div class="faction-top" style="background:linear-gradient(135deg,#2780ff,#1765e0)">
+                <div class="faction-icon">💙</div>
+                <div class="faction-name">คณะเยาวมาลย์อุทิศ</div>
+                <div class="faction-color-label"><span class="faction-color-dot"></span> สีน้ำเงิน</div>
+              </div>
+              <div class="faction-bottom">
+                <div class="faction-bottom-text"><small>สำหรับผู้มีสิทธิ์คณะสีนี้</small><b>เข้าสู่คูหาเลือกตั้ง</b></div>
+                <button class="faction-cta">เลือกคณะนี้ →</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <div class="faction-item" onclick="selectFaction('คณะนิภานภดล','สีแสด','#fd7e14')">
+              <div class="faction-top" style="background:linear-gradient(135deg,#ff941a,#ff7f0f)">
+                <div class="faction-icon">🧡</div>
+                <div class="faction-name">คณะนิภานภดล</div>
+                <div class="faction-color-label"><span class="faction-color-dot"></span> สีแสด</div>
+              </div>
+              <div class="faction-bottom">
+                <div class="faction-bottom-text"><small>สำหรับผู้มีสิทธิ์คณะสีนี้</small><b>เข้าสู่คูหาเลือกตั้ง</b></div>
+                <button class="faction-cta">เลือกคณะนี้ →</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <div class="faction-item" onclick="selectFaction('คณะปิยราชบพิตร','สีชมพู','#d63384')">
+              <div class="faction-top" style="background:linear-gradient(135deg,#f04da1,#d92f84)">
+                <div class="faction-icon">🩷</div>
+                <div class="faction-name">คณะปิยราชบพิตร</div>
+                <div class="faction-color-label"><span class="faction-color-dot"></span> สีชมพู</div>
+              </div>
+              <div class="faction-bottom">
+                <div class="faction-bottom-text"><small>สำหรับผู้มีสิทธิ์คณะสีนี้</small><b>เข้าสู่คูหาเลือกตั้ง</b></div>
+                <button class="faction-cta">เลือกคณะนี้ →</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6">
+            <div class="faction-item" onclick="selectFaction('คณะภาณุรังษี','สีแดง','#dc3545')">
+              <div class="faction-top" style="background:linear-gradient(135deg,#f14a59,#db2c3f)">
+                <div class="faction-icon">❤️</div>
+                <div class="faction-name">คณะภาณุรังษี</div>
+                <div class="faction-color-label"><span class="faction-color-dot"></span> สีแดง</div>
+              </div>
+              <div class="faction-bottom">
+                <div class="faction-bottom-text"><small>สำหรับผู้มีสิทธิ์คณะสีนี้</small><b>เข้าสู่คูหาเลือกตั้ง</b></div>
+                <button class="faction-cta">เลือกคณะนี้ →</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="text-center mt-4"><button class="btn btn-light rounded-pill px-4" onclick="showView('view-welcome')">กลับหน้าหลัก</button></div>
       </section>
