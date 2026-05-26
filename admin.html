@@ -28,6 +28,14 @@
             .menu-container .btn { width: 100%; margin-bottom: 10px; }
         }
     </style>
+
+    <script>
+        const ADMIN_SESSION_KEY = 'dsn_admin_ok';
+        if (sessionStorage.getItem(ADMIN_SESSION_KEY) !== '1') {
+            location.replace('index.html');
+        }
+    </script>
+
 </head>
 <body>
 
@@ -41,7 +49,8 @@
                 <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
                 <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
                 <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
-                <a href="index.html" class="btn btn-outline-light rounded-pill mt-md-5">🏠 กลับหน้าหลัก</a>
+                <button class="btn btn-outline-warning rounded-pill mt-md-5" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
+                <a href="index.html" class="btn btn-outline-light rounded-pill">🏠 กลับหน้าหลัก</a>
             </div>
         </div>
 
@@ -157,7 +166,25 @@
     // ==============================================================
 
     let myChart = null;
+    let latestScores = null;
     const factionColors = { 'คณะแม้นนฤมิตร': '#6f42c1', 'คณะเยาวมาลย์อุทิศ': '#0d6efd', 'คณะนิภานภดล': '#fd7e14', 'คณะปิยราชบพิตร': '#d63384', 'คณะภาณุรังษี': '#dc3545', 'งดออกเสียง': '#6c757d' };
+
+    function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[ch]));
+    }
+
+    function safeImageUrl(url) {
+        const value = String(url || '').trim();
+        if (/^https?:\/\//i.test(value)) return value;
+        return 'https://via.placeholder.com/45';
+    }
+
+    function logoutAdmin() {
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        location.href = 'index.html';
+    }
 
     window.onload = () => { loadCandidates(); };
 
@@ -180,12 +207,14 @@
             body.innerHTML = '';
             if (data && data.length > 0) {
                 data.forEach(c => {
+                    const id = escapeHTML(c.id);
+                    const img = safeImageUrl(c.image_url);
                     body.innerHTML += `<tr>
-                        <td><img src="${c.image_url || 'https://via.placeholder.com/45'}"></td>
-                        <td>${c.number}</td>
-                        <td>${c.faction}</td>
-                        <td>${c.name}</td>
-                        <td><button class="btn btn-sm btn-danger rounded-pill" onclick="deleteCandidate('${c.id}')">ลบ</button></td>
+                        <td><img src="${img}" alt="รูปผู้สมัคร" onerror="this.src='https://via.placeholder.com/45'"></td>
+                        <td>${escapeHTML(c.number)}</td>
+                        <td>${escapeHTML(c.faction)}</td>
+                        <td>${escapeHTML(c.name)}</td>
+                        <td><button class="btn btn-sm btn-danger rounded-pill" onclick="deleteCandidate('${id}')">ลบ</button></td>
                     </tr>`;
                 });
             } else {
@@ -204,6 +233,8 @@
         const faction = document.getElementById('faction').value;
 
         if(!num || !name) return Swal.fire('แจ้งเตือน','กรอกข้อมูลให้ครบ','warning');
+        if(file && !file.type.startsWith('image/')) return Swal.fire('แจ้งเตือน','ไฟล์รูปภาพไม่ถูกต้อง','warning');
+        if(file && file.size > 2 * 1024 * 1024) return Swal.fire('แจ้งเตือน','ขนาดรูปภาพต้องไม่เกิน 2MB','warning');
         Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:()=>Swal.showLoading()});
 
         try {
@@ -229,15 +260,22 @@
     }
 
     async function deleteCandidate(id) {
-        const { isConfirmed } = await Swal.fire({ title:'ยืนยันการลบ?', icon:'warning', showCancelButton:true, confirmButtonColor: '#d33' });
+        const { isConfirmed } = await Swal.fire({ title:'ยืนยันการลบ?', text:'เมื่อลบแล้วจะไม่สามารถกู้คืนข้อมูลผู้สมัครจากหน้านี้ได้', icon:'warning', showCancelButton:true, confirmButtonColor: '#d33', confirmButtonText:'ลบ', cancelButtonText:'ยกเลิก' });
         if(isConfirmed) {
-            await supabaseClient.from('candidates').delete().eq('id', id);
+            const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
+            if (error) return Swal.fire('Error', error.message, 'error');
+            Swal.fire('ลบแล้ว', 'ลบผู้สมัครเรียบร้อย', 'success');
             loadCandidates();
         }
     }
 
     async function loadLiveScores() {
         const { data: votes, error } = await supabaseClient.from('votes').select('candidate_id, candidates(faction, number, name)');
+        if (error) {
+            console.error(error);
+            return Swal.fire('Error', 'ไม่สามารถดึงผลคะแนนได้', 'error');
+        }
+
         let stats = { "งดออกเสียง": 0 };
         
         if (votes) {
@@ -254,10 +292,12 @@
         Object.keys(factionColors).forEach(f => {
             if (f !== "งดออกเสียง" && !stats[f]) stats[f] = {};
         });
-        renderChart(stats);
+        latestScores = stats;
+        renderChart();
     }
 
-    function renderChart(scores) {
+    function renderChart() {
+        const scores = latestScores;
         if (!scores) return;
         const filter = document.getElementById('scoreFilter').value;
         const ctx = document.getElementById('scoreChart').getContext('2d');
@@ -332,8 +372,10 @@
             const percent = s.total > 0 ? Math.round((s.voted / s.total) * 100) : 0;
             let barColor = percent >= 80 ? "bg-success" : (percent >= 50 ? "bg-warning text-dark" : "bg-danger");
             
+            const safeRoom = escapeHTML(room);
+            const safeFaction = escapeHTML((s.faction || '').replace('คณะ', ''));
             container.innerHTML += `<div class="col-md-4"><div class="card p-3 shadow-sm border-0" style="border-left: 5px solid ${factionColors[s.faction] || '#ccc'} !important;">
-                <div class="fw-bold">${room} <small class="badge bg-secondary opacity-75">${s.faction.replace('คณะ', '')}</small></div>
+                <div class="fw-bold">${safeRoom} <small class="badge bg-secondary opacity-75">${safeFaction}</small></div>
                 <div class="progress my-2" style="height:20px"><div class="progress-bar ${barColor}" style="width:${percent}%">${percent}%</div></div>
                 <div class="small text-muted d-flex justify-content-between">
                     <span>ใช้สิทธิ์แล้ว <b class="text-dark">${s.voted}</b>/${s.total}</span>
@@ -360,11 +402,11 @@
                 data.forEach(t => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${t.student_id || '-'}</td>
-                        <td>${t.student_no || '-'}</td>
-                        <td class="text-start">${t.fullname || '-'}</td>
-                        <td>${t.faction || '-'}</td>
-                        <td>${t.room || '-'}</td>
+                        <td>${escapeHTML(t.student_id || '-')}</td>
+                        <td>${escapeHTML(t.student_no || '-')}</td>
+                        <td class="text-start">${escapeHTML(t.fullname || '-')}</td>
+                        <td>${escapeHTML(t.faction || '-')}</td>
+                        <td>${escapeHTML(t.room || '-')}</td>
                         <td>
                             <span class="badge ${t.is_used ? 'bg-success' : 'bg-secondary'}">
                                 ${t.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}
