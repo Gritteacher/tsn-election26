@@ -439,6 +439,7 @@ function showTurnoutView() {
 }
 
 window.addEventListener('load', async () => {
+  trackPageView('student');
   const { data, error } = await supabaseClient.from('candidates').select('*').order('faction').order('number');
   if (error) {
     console.error(error);
@@ -631,6 +632,30 @@ async function loadPublicParticipation() {
     container.innerHTML = '<div class="col-12 text-center text-danger py-4">ไม่สามารถโหลดสถิติได้</div>';
   }
 }
+
+function getVisitorSessionId() {
+  let id = localStorage.getItem('tsn_visitor_session_id');
+  if (!id) {
+    id = 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('tsn_visitor_session_id', id);
+  }
+  return id;
+}
+
+async function trackPageView(pageName = 'student') {
+  try {
+    await supabaseClient.rpc('track_page_view', {
+      p_session_id: getVisitorSessionId(),
+      p_page: pageName,
+      p_path: location.pathname,
+      p_referrer: document.referrer || '',
+      p_user_agent: navigator.userAgent || ''
+    });
+  } catch (error) {
+    console.warn('trackPageView error:', error);
+  }
+}
+
 </script>
 </body>
 </html>

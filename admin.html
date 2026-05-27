@@ -80,6 +80,7 @@
           <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
           <button class="btn btn-success rounded-pill" onclick="switchTab('control')">🟢 เปิด/ปิดเลือกตั้ง</button>
           <a href="index.html" class="btn btn-outline-success rounded-pill mt-md-4">🏠 หน้าหลัก</a>
+          <button class="btn btn-primary rounded-pill" onclick="switchTab('analytics')">👁️ สถิติผู้เข้าชมเว็บ</button>
           <button class="btn btn-outline-danger rounded-pill" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
         </div>
       </div>
@@ -262,6 +263,35 @@
         </div>
       </div>
 
+      <div id="tab-analytics" class="d-none">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-2">
+          <h3 class="fw-normal text-primary m-0">👁️ สถิติผู้เข้าชมเว็บ</h3>
+          <button class="btn btn-primary rounded-pill px-4" onclick="loadVisitorAnalytics()">🔄 อัปเดตข้อมูล</button>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-3"><div class="card p-4 text-center"><div class="small text-muted">กำลังออนไลน์</div><div id="statOnline" class="display-6">-</div><div class="small text-muted">5 นาทีล่าสุด</div></div></div>
+          <div class="col-md-3"><div class="card p-4 text-center"><div class="small text-muted">วันนี้</div><div id="statToday" class="display-6">-</div><div class="small text-muted">จำนวน session</div></div></div>
+          <div class="col-md-3"><div class="card p-4 text-center"><div class="small text-muted">ทั้งหมด</div><div id="statTotal" class="display-6">-</div><div class="small text-muted">จำนวน session</div></div></div>
+          <div class="col-md-3"><div class="card p-4 text-center"><div class="small text-muted">Page Views</div><div id="statViews" class="display-6">-</div><div class="small text-muted">จำนวนการเปิดหน้า</div></div></div>
+        </div>
+
+        <div class="card p-4 mb-4">
+          <h5 class="fw-normal mb-3">📅 สถิติย้อนหลัง 14 วัน</h5>
+          <div style="height:360px"><canvas id="visitorChart"></canvas></div>
+        </div>
+
+        <div class="card p-4">
+          <h5 class="fw-normal mb-3">🕒 การเข้าชมล่าสุด</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead><tr><th>เวลา</th><th>หน้า</th><th>Path</th><th>Session</th><th>อุปกรณ์</th></tr></thead>
+              <tbody id="visitorRecentBody"><tr><td colspan="5" class="text-center text-muted py-4">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -286,6 +316,7 @@ function safeImageUrl(url) { return /^(https?:)?\/\//i.test(String(url||'')) ? e
 window.addEventListener('load', initAdmin);
 
 async function initAdmin() {
+  trackPageView('admin');
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) {
     document.getElementById('loginView').classList.remove('d-none');
@@ -344,7 +375,9 @@ function switchTab(tab) {
   if(tab === 'score') loadLiveScores();
   if(tab === 'turnout') loadParticipation();
   if(tab === 'voters') loadVoters(1);
+  if(tab === 'analytics') loadVisitorAnalytics();
   if(tab === 'control') loadElectionControl();
+  if(tab === 'analytics') loadVisitorAnalytics();
 }
 
 async function loadCandidates() {
@@ -704,6 +737,104 @@ async function saveElectionControl(forceValue = null) {
   } catch (error) {
     console.error('saveElectionControl error:', error);
     Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถบันทึกสถานะได้', 'error');
+  }
+}
+
+
+function getVisitorSessionId() {
+  let id = localStorage.getItem('tsn_visitor_session_id');
+  if (!id) {
+    id = 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('tsn_visitor_session_id', id);
+  }
+  return id;
+}
+
+async function trackPageView(pageName = 'student') {
+  try {
+    await supabaseClient.rpc('track_page_view', {
+      p_session_id: getVisitorSessionId(),
+      p_page: pageName,
+      p_path: location.pathname,
+      p_referrer: document.referrer || '',
+      p_user_agent: navigator.userAgent || ''
+    });
+  } catch (error) {
+    console.warn('trackPageView error:', error);
+  }
+}
+
+
+let visitorChart = null;
+
+function formatThaiDateTime(value) {
+  if (!value) return '-';
+  try {
+    return new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'short', timeStyle: 'short' });
+  } catch { return value; }
+}
+
+function detectDevice(userAgent) {
+  const ua = String(userAgent || '').toLowerCase();
+  if (ua.includes('iphone') || ua.includes('android') || ua.includes('mobile')) return 'มือถือ';
+  if (ua.includes('ipad') || ua.includes('tablet')) return 'แท็บเล็ต';
+  return 'คอมพิวเตอร์';
+}
+
+async function loadVisitorAnalytics() {
+  const onlineEl = document.getElementById('statOnline');
+  const todayEl = document.getElementById('statToday');
+  const totalEl = document.getElementById('statTotal');
+  const viewsEl = document.getElementById('statViews');
+  const recentBody = document.getElementById('visitorRecentBody');
+
+  if (onlineEl) onlineEl.textContent = '...';
+  if (todayEl) todayEl.textContent = '...';
+  if (totalEl) totalEl.textContent = '...';
+  if (viewsEl) viewsEl.textContent = '...';
+  if (recentBody) recentBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">กำลังโหลดข้อมูล...</td></tr>';
+
+  try {
+    const [summaryRes, dailyRes, recentRes] = await Promise.all([
+      supabaseClient.rpc('get_visitor_summary'),
+      supabaseClient.rpc('get_visitor_daily_stats', { p_days: 14 }),
+      supabaseClient.from('visitor_events').select('created_at,page,path,session_id,user_agent').order('created_at', { ascending: false }).limit(30)
+    ]);
+
+    if (summaryRes.error) throw summaryRes.error;
+    if (dailyRes.error) throw dailyRes.error;
+    if (recentRes.error) throw recentRes.error;
+
+    const summary = Array.isArray(summaryRes.data) ? summaryRes.data[0] : summaryRes.data;
+    onlineEl.textContent = Number(summary?.online_now || 0).toLocaleString('th-TH');
+    todayEl.textContent = Number(summary?.today_sessions || 0).toLocaleString('th-TH');
+    totalEl.textContent = Number(summary?.total_sessions || 0).toLocaleString('th-TH');
+    viewsEl.textContent = Number(summary?.total_views || 0).toLocaleString('th-TH');
+
+    const daily = dailyRes.data || [];
+    const labels = daily.map(r => new Date(r.day).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }));
+    const sessions = daily.map(r => Number(r.sessions || 0));
+    const views = daily.map(r => Number(r.views || 0));
+
+    const ctx = document.getElementById('visitorChart')?.getContext('2d');
+    if (ctx) {
+      if (visitorChart) visitorChart.destroy();
+      visitorChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Sessions', data: sessions, tension: 0.35 }, { label: 'Page Views', data: views, tension: 0.35 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+      });
+    }
+
+    if (recentBody) {
+      recentBody.innerHTML = (recentRes.data || []).length
+        ? recentRes.data.map(r => `<tr><td>${escapeHTML(formatThaiDateTime(r.created_at))}</td><td>${escapeHTML(r.page || '-')}</td><td>${escapeHTML(r.path || '-')}</td><td><span class="small text-muted">${escapeHTML(String(r.session_id || '').slice(0, 16))}...</span></td><td>${escapeHTML(detectDevice(r.user_agent))}</td></tr>`).join('')
+        : '<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีข้อมูลผู้เข้าชม</td></tr>';
+    }
+  } catch (error) {
+    console.error('loadVisitorAnalytics error:', error);
+    if (recentBody) recentBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">${escapeHTML(error.message || 'โหลดข้อมูลไม่สำเร็จ')}</td></tr>`;
+    Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถโหลดสถิติผู้เข้าชมได้', 'error');
   }
 }
 
