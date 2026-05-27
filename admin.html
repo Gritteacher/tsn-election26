@@ -78,6 +78,7 @@
           <button class="btn btn-warning rounded-pill" onclick="switchTab('score')">📊 ดูผลคะแนน</button>
           <button class="btn btn-info rounded-pill text-white" onclick="switchTab('turnout')">📈 สถิติผู้ใช้สิทธิ์</button>
           <button class="btn btn-secondary rounded-pill" onclick="switchTab('voters')">📋 รายชื่อผู้ใช้สิทธิ์</button>
+          <button class="btn btn-success rounded-pill" onclick="switchTab('control')">🟢 เปิด/ปิดเลือกตั้ง</button>
           <a href="index.html" class="btn btn-outline-success rounded-pill mt-md-4">🏠 หน้าหลัก</a>
           <button class="btn btn-outline-danger rounded-pill" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
         </div>
@@ -222,6 +223,40 @@
   </div>
 </div>
 
+      <div id="tab-control" class="d-none">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-2">
+          <h3 class="fw-normal text-success m-0">🟢 เปิด/ปิดระบบลงคะแนน</h3>
+          <button class="btn btn-success rounded-pill px-4" onclick="loadElectionControl()">🔄 โหลดสถานะปัจจุบัน</button>
+        </div>
+
+        <div class="card p-4">
+          <div id="electionControlStatus" class="alert alert-secondary rounded-4 border-0">
+            กำลังโหลดสถานะ...
+          </div>
+
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-7">
+              <label class="form-label small">ข้อความแจ้งเตือนเมื่อนักเรียนกดลงคะแนนขณะปิดระบบ</label>
+              <textarea id="electionClosedMessage" class="form-control rounded-4" rows="3">ขณะนี้ยังไม่เปิดระบบลงคะแนน
+เปิดระบบ เวลา 8.00 - 15.30 น. วันที่ 4 มิถุนายน</textarea>
+              <div class="small text-muted mt-2">นักเรียนยังเข้าหน้าต่าง ๆ ได้ตามปกติ แต่เมื่อกดยืนยันลงคะแนน ระบบจะแจ้งข้อความนี้</div>
+            </div>
+
+            <div class="col-lg-5">
+              <div class="p-4 rounded-4 bg-light border">
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" role="switch" id="electionOpenSwitch" style="width:3.5rem;height:1.8rem">
+                  <label class="form-check-label ms-2" for="electionOpenSwitch">เปิดรับการลงคะแนน</label>
+                </div>
+                <button class="btn btn-success rounded-pill w-100 mb-2" onclick="saveElectionControl(true)">🟢 เปิดระบบลงคะแนน</button>
+                <button class="btn btn-danger rounded-pill w-100 mb-2" onclick="saveElectionControl(false)">🔴 ปิดระบบลงคะแนน</button>
+                <button class="btn btn-outline-secondary rounded-pill w-100" onclick="saveElectionControl()">💾 บันทึกตามสวิตช์</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
 <script>
 const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
@@ -295,6 +330,7 @@ function switchTab(tab) {
   if(tab === 'score') loadLiveScores();
   if(tab === 'turnout') loadParticipation();
   if(tab === 'voters') loadVoters(1);
+  if(tab === 'control') loadElectionControl();
 }
 
 async function loadCandidates() {
@@ -586,6 +622,74 @@ async function loadVoters(page = 1) {
     if (summary) summary.textContent = 'โหลดข้อมูลไม่สำเร็จ';
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
+  }
+}
+
+
+async function loadElectionControl() {
+  const statusBox = document.getElementById('electionControlStatus');
+  const switchEl = document.getElementById('electionOpenSwitch');
+  const messageEl = document.getElementById('electionClosedMessage');
+  if (!statusBox || !switchEl || !messageEl) return;
+
+  statusBox.className = 'alert alert-secondary rounded-4 border-0';
+  statusBox.innerHTML = 'กำลังโหลดสถานะ...';
+
+  try {
+    const { data, error } = await supabaseClient.rpc('get_election_control');
+    if (error) throw error;
+
+    const row = Array.isArray(data) ? data[0] : data;
+    const isOpen = row ? !!row.is_open : true;
+    const message = row?.closed_message || 'ขณะนี้ยังไม่เปิดระบบลงคะแนน\nเปิดระบบ เวลา 8.00 - 15.30 น. วันที่ 4 มิถุนายน';
+
+    switchEl.checked = isOpen;
+    messageEl.value = message;
+
+    statusBox.className = `alert ${isOpen ? 'alert-success' : 'alert-danger'} rounded-4 border-0`;
+    statusBox.innerHTML = isOpen
+      ? 'สถานะปัจจุบัน: <b>เปิดรับการลงคะแนน</b>'
+      : 'สถานะปัจจุบัน: <b>ปิดรับการลงคะแนน</b>';
+  } catch (error) {
+    console.error('loadElectionControl error:', error);
+    statusBox.className = 'alert alert-danger rounded-4 border-0';
+    statusBox.innerHTML = `ไม่สามารถโหลดสถานะได้: ${escapeHTML(error.message || '')}`;
+  }
+}
+
+async function saveElectionControl(forceValue = null) {
+  const switchEl = document.getElementById('electionOpenSwitch');
+  const messageEl = document.getElementById('electionClosedMessage');
+  if (!switchEl || !messageEl) return;
+
+  const isOpen = forceValue === null ? switchEl.checked : !!forceValue;
+  const closedMessage = messageEl.value.trim() || 'ขณะนี้ยังไม่เปิดระบบลงคะแนน\nเปิดระบบ เวลา 8.00 - 15.30 น. วันที่ 4 มิถุนายน';
+
+  const confirm = await Swal.fire({
+    title: isOpen ? 'เปิดระบบลงคะแนน?' : 'ปิดระบบลงคะแนน?',
+    text: isOpen ? 'นักเรียนจะสามารถกดยืนยันลงคะแนนได้' : 'นักเรียนยังเข้าเว็บได้ แต่จะลงคะแนนไม่ได้',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'ยืนยัน',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: isOpen ? '#006633' : '#dc3545'
+  });
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  try {
+    const { error } = await supabaseClient.rpc('set_election_control', {
+      p_is_open: isOpen,
+      p_closed_message: closedMessage
+    });
+    if (error) throw error;
+
+    Swal.fire('สำเร็จ', isOpen ? 'เปิดระบบลงคะแนนแล้ว' : 'ปิดระบบลงคะแนนแล้ว', 'success');
+    await loadElectionControl();
+  } catch (error) {
+    console.error('saveElectionControl error:', error);
+    Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถบันทึกสถานะได้', 'error');
   }
 }
 

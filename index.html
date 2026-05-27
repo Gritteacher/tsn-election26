@@ -408,6 +408,7 @@
 const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const ELECTION_CLOSED_MESSAGE = 'ขณะนี้ยังไม่เปิดระบบลงคะแนน\nเปิดระบบ เวลา 8.00 - 15.30 น. วันที่ 4 มิถุนายน';
 
 let currentFaction = '';
 let allCandidates = [];
@@ -487,6 +488,33 @@ function selectFaction(name, colorName, hex) {
   showView('view-voting');
 }
 
+
+async function checkElectionOpenBeforeVote() {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_election_control');
+    if (error) {
+      console.warn('get_election_control error:', error);
+      return true;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row && row.is_open === false) {
+      Swal.fire({
+        icon: 'info',
+        title: 'ยังไม่เปิดระบบลงคะแนน',
+        text: row.closed_message || ELECTION_CLOSED_MESSAGE,
+        confirmButtonText: 'รับทราบ',
+        confirmButtonColor: '#006633'
+      });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.warn('checkElectionOpenBeforeVote error:', error);
+    return true;
+  }
+}
+
 async function submitVote() {
   if (isSubmittingVote) return;
 
@@ -497,6 +525,9 @@ async function submitVote() {
   if (!tokenInput || tokenInput.length !== 8 || !voteElement) {
     return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัส Token 8 หลัก และเลือกผู้สมัคร', 'warning');
   }
+
+  const electionIsOpen = await checkElectionOpenBeforeVote();
+  if (!electionIsOpen) return;
 
   const confirmResult = await Swal.fire({
     title: 'ยืนยันการลงคะแนน?',
@@ -525,7 +556,18 @@ async function submitVote() {
     Swal.fire('สำเร็จ!', 'ขอบคุณที่ใช้สิทธิ์', 'success').then(() => location.reload());
   } catch (error) {
     console.error(error);
-    Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถบันทึกคะแนนได้', 'error');
+    const msg = error.message || 'ไม่สามารถบันทึกคะแนนได้';
+    if (msg.includes('ยังไม่เปิดระบบ') || msg.includes('เปิดระบบ เวลา')) {
+      Swal.fire({
+        icon: 'info',
+        title: 'ยังไม่เปิดระบบลงคะแนน',
+        text: msg,
+        confirmButtonText: 'รับทราบ',
+        confirmButtonColor: '#006633'
+      });
+    } else {
+      Swal.fire('ไม่สำเร็จ', msg, 'error');
+    }
   } finally {
     isSubmittingVote = false;
     submitBtn.disabled = false;
