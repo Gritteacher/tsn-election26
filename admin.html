@@ -219,10 +219,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-
       <div id="tab-control" class="d-none">
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-2">
           <h3 class="fw-normal text-success m-0">🟢 เปิด/ปิดระบบลงคะแนน</h3>
@@ -237,9 +233,11 @@
           <div class="row g-4 align-items-center">
             <div class="col-lg-7">
               <label class="form-label small">ข้อความแจ้งเตือนเมื่อนักเรียนกดลงคะแนนขณะปิดระบบ</label>
-              <textarea id="electionClosedMessage" class="form-control rounded-4" rows="3">ขณะนี้ยังไม่เปิดระบบลงคะแนน
+              <textarea id="electionClosedMessage" class="form-control rounded-4" rows="4">ขณะนี้ยังไม่เปิดระบบลงคะแนน
 เปิดระบบ เวลา 8.00 - 15.30 น. วันที่ 4 มิถุนายน</textarea>
-              <div class="small text-muted mt-2">นักเรียนยังเข้าหน้าต่าง ๆ ได้ตามปกติ แต่เมื่อกดยืนยันลงคะแนน ระบบจะแจ้งข้อความนี้</div>
+              <div class="small text-muted mt-2">
+                นักเรียนยังเข้าหน้าต่าง ๆ ได้ตามปกติ แต่เมื่อกดยืนยันลงคะแนน ระบบจะแจ้งข้อความนี้
+              </div>
             </div>
 
             <div class="col-lg-5">
@@ -248,15 +246,25 @@
                   <input class="form-check-input" type="checkbox" role="switch" id="electionOpenSwitch" style="width:3.5rem;height:1.8rem">
                   <label class="form-check-label ms-2" for="electionOpenSwitch">เปิดรับการลงคะแนน</label>
                 </div>
-                <button class="btn btn-success rounded-pill w-100 mb-2" onclick="saveElectionControl(true)">🟢 เปิดระบบลงคะแนน</button>
-                <button class="btn btn-danger rounded-pill w-100 mb-2" onclick="saveElectionControl(false)">🔴 ปิดระบบลงคะแนน</button>
-                <button class="btn btn-outline-secondary rounded-pill w-100" onclick="saveElectionControl()">💾 บันทึกตามสวิตช์</button>
+
+                <button class="btn btn-success rounded-pill w-100 mb-2" onclick="saveElectionControl(true)">
+                  🟢 เปิดระบบลงคะแนน
+                </button>
+                <button class="btn btn-danger rounded-pill w-100 mb-2" onclick="saveElectionControl(false)">
+                  🔴 ปิดระบบลงคะแนน
+                </button>
+                <button class="btn btn-outline-secondary rounded-pill w-100" onclick="saveElectionControl()">
+                  💾 บันทึกตามสวิตช์
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
 <script>
 const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
@@ -326,7 +334,13 @@ async function logoutAdmin() {
 
 function switchTab(tab) {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('d-none'));
-  document.getElementById(`tab-${tab}`).classList.remove('d-none');
+  const target = document.getElementById(`tab-${tab}`);
+  if (!target) {
+    console.error('ไม่พบแท็บ:', tab);
+    Swal.fire('ไม่สำเร็จ', `ไม่พบหน้า tab-${tab}`, 'error');
+    return;
+  }
+  target.classList.remove('d-none');
   if(tab === 'score') loadLiveScores();
   if(tab === 'turnout') loadParticipation();
   if(tab === 'voters') loadVoters(1);
