@@ -405,6 +405,63 @@
       display: none !important;
     }
 
+  
+    .room-list-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 4px 0 10px;
+    }
+
+    .room-list-block {
+      margin-top: 16px;
+      page-break-inside: avoid;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .room-list-head {
+      padding: 9px 12px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .room-list-body {
+      padding: 10px;
+    }
+
+    .room-list-table {
+      font-size: 11.5px;
+    }
+
+    .room-list-table th {
+      font-size: 11.2px;
+      padding: 6px;
+    }
+
+    .room-list-table td {
+      font-size: 11px;
+      padding: 5px 6px;
+    }
+
+    .status-used {
+      color: #0f7a3a;
+    }
+
+    .status-unused {
+      color: #b02a37;
+    }
+
+    @media print {
+      .room-list-block {
+        page-break-inside: avoid;
+      }
+    }
+
   </style>
 </head>
 
@@ -433,6 +490,7 @@
         <label><input type="checkbox" class="report-option" data-section="room-turnout" checked onchange="applyReportOptions()"> สรุปแยกตามห้องเรียน</label>
         <label><input type="checkbox" class="report-option" data-section="scores" checked onchange="applyReportOptions()"> ผลคะแนนแยกตามคณะสี</label>
         <label><input type="checkbox" class="report-option" data-section="winners" checked onchange="applyReportOptions()"> สรุปผู้ได้คะแนนสูงสุด</label>
+        <label><input type="checkbox" class="report-option" data-section="room-list" onchange="applyReportOptions()"> รายชื่อผู้มีสิทธิ์รายห้อง</label>
         <label><input type="checkbox" class="report-option" data-section="signatures" checked onchange="applyReportOptions()"> ช่องลงชื่อ</label>
       </div>
 
@@ -520,6 +578,15 @@
             </thead>
             <tbody id="winnerBody"></tbody>
           </table>
+        </div>
+
+        
+        <div class="section report-section report-section-hidden" data-report-section="room-list">
+          <h3 class="section-title">6. รายชื่อผู้มีสิทธิ์แยกตามห้องเรียน</h3>
+          <div class="room-list-note">
+            แสดงรายชื่อผู้มีสิทธิ์ทั้งหมด แยกตามคณะสีและห้องเรียน พร้อมสถานะการใช้สิทธิ์
+          </div>
+          <div id="roomVoterListContainer"></div>
         </div>
 
         <div class="signature-grid report-section" data-report-section="signatures">
@@ -659,7 +726,8 @@ function blankStats() {
       notVoted: 0,
       choices: {},
       noVote: 0,
-      rooms: {}
+      rooms: {},
+      votersByRoom: {}
     };
   });
   return stats;
@@ -675,7 +743,7 @@ async function loadReport() {
 
   try {
     const [tokensRes, candidatesRes, votesRes] = await Promise.all([
-      supabaseClient.from('tokens').select('token_code, faction, is_used, room'),
+      supabaseClient.from('tokens').select('token_code, student_id, student_no, fullname, faction, is_used, room'),
       supabaseClient.from('candidates').select('id, faction, number, name').order('faction').order('number'),
       supabaseClient.from('votes').select('token_code, candidate_id, candidates(id, faction, number, name)')
     ]);
@@ -696,7 +764,7 @@ async function loadReport() {
       tokenFactionMap[t.token_code] = faction;
 
       if (!stats[faction]) {
-        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
+        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {}, votersByRoom: {} };
       }
 
       stats[faction].total++;
@@ -714,6 +782,17 @@ async function loadReport() {
 
       stats[faction].rooms[room].total++;
       if (t.is_used) stats[faction].rooms[room].voted++;
+
+      if (!stats[faction].votersByRoom[room]) {
+        stats[faction].votersByRoom[room] = [];
+      }
+      stats[faction].votersByRoom[room].push({
+        student_id: t.student_id || '',
+        student_no: t.student_no || '',
+        fullname: t.fullname || '',
+        room,
+        is_used: !!t.is_used
+      });
     });
 
     Object.keys(stats).forEach(f => {
@@ -728,7 +807,7 @@ async function loadReport() {
     candidates.forEach(c => {
       const faction = c.faction || 'ไม่ระบุคณะสี';
       if (!stats[faction]) {
-        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
+        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {}, votersByRoom: {} };
       }
 
       const key = c.id;
@@ -744,7 +823,7 @@ async function loadReport() {
       if (!v.candidate_id) {
         const faction = tokenFactionMap[v.token_code] || 'ไม่ระบุคณะสี';
         if (!stats[faction]) {
-          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
+          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {}, votersByRoom: {} };
         }
         stats[faction].noVote++;
         return;
@@ -753,7 +832,7 @@ async function loadReport() {
       if (v.candidates) {
         const faction = v.candidates.faction || 'ไม่ระบุคณะสี';
         if (!stats[faction]) {
-          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
+          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {}, votersByRoom: {} };
         }
 
         if (!stats[faction].choices[v.candidate_id]) {
@@ -795,6 +874,7 @@ function renderReport(stats) {
 
   renderTurnoutByFaction(stats);
   renderRoomTurnoutByFaction(stats);
+  renderRoomVoterLists(stats);
   renderScoresByFaction(stats);
   renderWinners(stats);
 }
@@ -884,6 +964,80 @@ function renderRoomTurnoutByFaction(stats) {
         </div>
       </div>
     `;
+  }).join('');
+}
+
+
+
+function compareStudentNo(a, b) {
+  const an = Number(a.student_no);
+  const bn = Number(b.student_no);
+  if (!Number.isNaN(an) && !Number.isNaN(bn)) return an - bn;
+  return String(a.student_no || '').localeCompare(String(b.student_no || ''), 'th', { numeric: true });
+}
+
+function renderRoomVoterLists(stats) {
+  const container = document.getElementById('roomVoterListContainer');
+  if (!container) return;
+
+  container.innerHTML = sortedFactionNames(stats).map(f => {
+    const s = stats[f];
+    const color = factionColors[f] || '#6c757d';
+    const rooms = Object.keys(s.votersByRoom || {}).sort(compareRoomName);
+
+    if (!rooms.length) {
+      return `
+        <div class="room-list-block">
+          <div class="room-list-head" style="background:${color}">
+            <span>${escapeHTML(f)}</span>
+            <span>ไม่มีข้อมูลรายชื่อ</span>
+          </div>
+          <div class="room-list-body text-muted">ไม่มีข้อมูลรายชื่อผู้มีสิทธิ์ในคณะสีนี้</div>
+        </div>
+      `;
+    }
+
+    return rooms.map(room => {
+      const voters = (s.votersByRoom[room] || []).sort(compareStudentNo);
+      const total = voters.length;
+      const voted = voters.filter(v => v.is_used).length;
+      const notVoted = Math.max(total - voted, 0);
+
+      const rows = voters.map((v, index) => `
+        <tr>
+          <td class="text-center">${index + 1}</td>
+          <td class="text-center">${escapeHTML(v.student_no || '-')}</td>
+          <td class="text-center">${escapeHTML(v.student_id || '-')}</td>
+          <td>${escapeHTML(v.fullname || '-')}</td>
+          <td class="text-center ${v.is_used ? 'status-used' : 'status-unused'}">
+            ${v.is_used ? 'ใช้สิทธิ์แล้ว' : 'ยังไม่ใช้สิทธิ์'}
+          </td>
+        </tr>
+      `).join('');
+
+      return `
+        <div class="room-list-block">
+          <div class="room-list-head" style="background:${color}">
+            <span>${escapeHTML(f)} | ห้อง ${escapeHTML(room)}</span>
+            <span>ใช้สิทธิ์ ${formatNumber(voted)} / ${formatNumber(total)} คน | ไม่มา ${formatNumber(notVoted)} คน</span>
+          </div>
+          <div class="room-list-body">
+            <table class="room-list-table">
+              <thead>
+                <tr>
+                  <th style="width:45px">ลำดับ</th>
+                  <th style="width:60px">เลขที่</th>
+                  <th style="width:90px">เลขประจำตัว</th>
+                  <th>ชื่อ - สกุล</th>
+                  <th style="width:95px">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
   }).join('');
 }
 
