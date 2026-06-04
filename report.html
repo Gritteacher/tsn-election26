@@ -462,6 +462,85 @@
       }
     }
 
+  
+    .room-filter-panel {
+      width: 100%;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      align-items: center;
+    }
+
+    .room-filter-panel select {
+      width: auto;
+      min-width: 220px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-family: 'Mitr', sans-serif;
+      font-weight: 300;
+      background: white;
+    }
+
+    .room-filter-hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .room-filter-hidden {
+      display: none !important;
+    }
+
+  
+    .report-filter-panel {
+      width: 100%;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .filter-row label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .report-filter-panel select {
+      width: auto;
+      min-width: 220px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-family: 'Mitr', sans-serif;
+      font-weight: 300;
+      background: white;
+      color: var(--text);
+    }
+
+    .room-filter-hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .report-filter-hidden {
+      display: none !important;
+    }
+
   </style>
 </head>
 
@@ -492,6 +571,32 @@
         <label><input type="checkbox" class="report-option" data-section="winners" checked onchange="applyReportOptions()"> สรุปผู้ได้คะแนนสูงสุด</label>
         <label><input type="checkbox" class="report-option" data-section="room-list" onchange="applyReportOptions()"> รายชื่อผู้มีสิทธิ์รายห้อง</label>
         <label><input type="checkbox" class="report-option" data-section="signatures" checked onchange="applyReportOptions()"> ช่องลงชื่อ</label>
+
+        <div class="report-filter-panel">
+          <div class="options-title">เลือกคณะสีและห้องเรียนที่ต้องการแสดง</div>
+
+          <div class="filter-row">
+            <label>
+              คณะสี
+              <select id="factionReportFilter" onchange="handleFactionReportFilterChange()">
+                <option value="all">ทุกคณะสี</option>
+              </select>
+            </label>
+
+            <label>
+              ห้องเรียน
+              <select id="roomReportFilter" onchange="applyReportFilters()">
+                <option value="all">ทุกห้องเรียน</option>
+              </select>
+            </label>
+
+            <button class="btn-secondary" onclick="resetReportFilters()" type="button">แสดงทั้งหมด</button>
+          </div>
+
+          <span class="room-filter-hint">
+            ตัวกรองนี้มีผลกับหัวข้อแยกตามคณะสี, แยกตามห้องเรียน, ผลคะแนน, ผู้ได้คะแนนสูงสุด และรายชื่อรายห้อง
+          </span>
+        </div>
       </div>
 
       </div>
@@ -872,6 +977,7 @@ function renderReport(stats) {
   document.getElementById('overallNotVoted').textContent = formatNumber(notVoted);
   document.getElementById('overallTurnoutPercent').textContent = percent(voted, total);
 
+  populateReportFilters(stats);
   renderTurnoutByFaction(stats);
   renderRoomTurnoutByFaction(stats);
   renderRoomVoterLists(stats);
@@ -889,7 +995,7 @@ function renderTurnoutByFaction(stats) {
   body.innerHTML = sortedFactionNames(stats).map(f => {
     const s = stats[f];
     return `
-      <tr>
+      <tr data-faction="${escapeHTML(f)}">
         <td>${escapeHTML(f)}</td>
         <td class="text-center">${formatNumber(s.total)}</td>
         <td class="text-center">${formatNumber(s.voted)}</td>
@@ -926,7 +1032,7 @@ function renderRoomTurnoutByFaction(stats) {
       ? rooms.map((r, index) => {
           const pClass = roomPercentClass(r.voted, r.total);
           return `
-            <tr>
+            <tr data-faction="${escapeHTML(f)}" data-room="${escapeHTML(r.room)}">
               <td class="text-center">${index + 1}</td>
               <td>${escapeHTML(r.room)}</td>
               <td class="text-center">${formatNumber(r.total)}</td>
@@ -939,7 +1045,7 @@ function renderRoomTurnoutByFaction(stats) {
       : '<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูลห้องเรียนในคณะสีนี้</td></tr>';
 
     return `
-      <div class="faction-block">
+      <div class="faction-block" data-faction="${escapeHTML(f)}">
         <div class="faction-head" style="background:${color}">
           <span>${escapeHTML(f)}</span>
           <span>ใช้สิทธิ์ ${formatNumber(s.voted)} / ${formatNumber(s.total)} คน (${percent(s.voted, s.total)})</span>
@@ -987,7 +1093,7 @@ function renderRoomVoterLists(stats) {
 
     if (!rooms.length) {
       return `
-        <div class="room-list-block">
+        <div class="room-list-block" data-faction="${escapeHTML(f)}">
           <div class="room-list-head" style="background:${color}">
             <span>${escapeHTML(f)}</span>
             <span>ไม่มีข้อมูลรายชื่อ</span>
@@ -1016,7 +1122,7 @@ function renderRoomVoterLists(stats) {
       `).join('');
 
       return `
-        <div class="room-list-block">
+        <div class="room-list-block" data-faction="${escapeHTML(f)}" data-room="${escapeHTML(room)}">
           <div class="room-list-head" style="background:${color}">
             <span>${escapeHTML(f)} | ห้อง ${escapeHTML(room)}</span>
             <span>ใช้สิทธิ์ ${formatNumber(voted)} / ${formatNumber(total)} คน | ไม่มา ${formatNumber(notVoted)} คน</span>
@@ -1078,7 +1184,7 @@ function renderScoresByFaction(stats) {
     `);
 
     return `
-      <div class="faction-block">
+      <div class="faction-block" data-faction="${escapeHTML(f)}">
         <div class="faction-head" style="background:${color}">
           <span>${escapeHTML(f)}</span>
           <span>คะแนนรวม ${formatNumber(validVoteTotal)} คะแนน</span>
@@ -1115,7 +1221,7 @@ function renderWinners(stats) {
 
     if (!winner || Number(winner.count || 0) === 0) {
       return `
-        <tr>
+        <tr data-faction="${escapeHTML(f)}">
           <td>${escapeHTML(f)}</td>
           <td class="text-muted">ยังไม่มีคะแนนผู้สมัคร</td>
           <td class="text-center">0</td>
@@ -1125,7 +1231,7 @@ function renderWinners(stats) {
     }
 
     return `
-      <tr>
+      <tr data-faction="${escapeHTML(f)}">
         <td>${escapeHTML(f)}</td>
         <td>เบอร์ ${escapeHTML(winner.number)} ${escapeHTML(winner.name)}</td>
         <td class="text-center">${formatNumber(winner.count)}</td>
@@ -1151,6 +1257,227 @@ function selectAllReportOptions(isChecked) {
     opt.checked = !!isChecked;
   });
   applyReportOptions();
+}
+
+
+function getAllRoomsFromStats(stats) {
+  const rooms = new Set();
+  Object.keys(stats || {}).forEach(f => {
+    Object.keys(stats[f].rooms || {}).forEach(room => rooms.add(room));
+    Object.keys(stats[f].votersByRoom || {}).forEach(room => rooms.add(room));
+  });
+  return Array.from(rooms).sort((a, b) => compareRoomName(a, b));
+}
+
+function populateRoomReportFilter(stats) {
+  const select = document.getElementById('roomReportFilter');
+  if (!select) return;
+
+  const previous = select.value || 'all';
+  const rooms = getAllRoomsFromStats(stats);
+
+  select.innerHTML = '<option value="all">ทุกห้องเรียน</option>';
+  rooms.forEach(room => {
+    const opt = document.createElement('option');
+    opt.value = room;
+    opt.textContent = room;
+    select.appendChild(opt);
+  });
+
+  if (previous !== 'all' && rooms.includes(previous)) {
+    select.value = previous;
+  } else {
+    select.value = 'all';
+  }
+}
+
+function applyRoomReportFilter() {
+  const select = document.getElementById('roomReportFilter');
+  const selectedRoom = select ? select.value : 'all';
+
+  document.querySelectorAll('[data-room]').forEach(el => {
+    const room = el.getAttribute('data-room');
+    const show = selectedRoom === 'all' || room === selectedRoom;
+    el.classList.toggle('room-filter-hidden', !show);
+  });
+
+  updateRoomFilterEmptyMessages(selectedRoom);
+}
+
+function updateRoomFilterEmptyMessages(selectedRoom) {
+  document.querySelectorAll('[data-room-filter-empty]').forEach(el => el.remove());
+
+  if (selectedRoom === 'all') return;
+
+  const roomTurnoutSection = document.querySelector('[data-report-section="room-turnout"]');
+  const roomListSection = document.querySelector('[data-report-section="room-list"]');
+
+  if (roomTurnoutSection) {
+    const visibleRows = roomTurnoutSection.querySelectorAll('tr[data-room]:not(.room-filter-hidden)').length;
+    if (visibleRows === 0) {
+      const note = document.createElement('div');
+      note.setAttribute('data-room-filter-empty', 'true');
+      note.className = 'text-muted';
+      note.style.marginTop = '10px';
+      note.textContent = 'ไม่พบข้อมูลห้องเรียนที่เลือกในหัวข้อนี้';
+      roomTurnoutSection.appendChild(note);
+    }
+  }
+
+  if (roomListSection) {
+    const visibleBlocks = roomListSection.querySelectorAll('.room-list-block[data-room]:not(.room-filter-hidden)').length;
+    if (visibleBlocks === 0) {
+      const note = document.createElement('div');
+      note.setAttribute('data-room-filter-empty', 'true');
+      note.className = 'text-muted';
+      note.style.marginTop = '10px';
+      note.textContent = 'ไม่พบรายชื่อของห้องเรียนที่เลือก';
+      roomListSection.appendChild(note);
+    }
+  }
+}
+
+function resetRoomReportFilter() {
+  const select = document.getElementById('roomReportFilter');
+  if (select) select.value = 'all';
+  applyReportFilters();
+}
+
+
+function getAllFactionsFromStats(stats) {
+  return sortedFactionNames(stats);
+}
+
+function getRoomsFromStats(stats, selectedFaction = 'all') {
+  const rooms = new Set();
+  Object.keys(stats || {}).forEach(f => {
+    if (selectedFaction !== 'all' && f !== selectedFaction) return;
+    Object.keys(stats[f].rooms || {}).forEach(room => rooms.add(room));
+    Object.keys(stats[f].votersByRoom || {}).forEach(room => rooms.add(room));
+  });
+  return Array.from(rooms).sort((a, b) => compareRoomName(a, b));
+}
+
+function populateReportFilters(stats) {
+  const factionSelect = document.getElementById('factionReportFilter');
+  const roomSelect = document.getElementById('roomReportFilter');
+  if (!factionSelect || !roomSelect) return;
+
+  const prevFaction = factionSelect.value || 'all';
+  const prevRoom = roomSelect.value || 'all';
+
+  const factions = getAllFactionsFromStats(stats);
+  factionSelect.innerHTML = '<option value="all">ทุกคณะสี</option>';
+  factions.forEach(faction => {
+    const opt = document.createElement('option');
+    opt.value = faction;
+    opt.textContent = faction;
+    factionSelect.appendChild(opt);
+  });
+
+  factionSelect.value = factions.includes(prevFaction) ? prevFaction : 'all';
+
+  const rooms = getRoomsFromStats(stats, factionSelect.value);
+  roomSelect.innerHTML = '<option value="all">ทุกห้องเรียน</option>';
+  rooms.forEach(room => {
+    const opt = document.createElement('option');
+    opt.value = room;
+    opt.textContent = room;
+    roomSelect.appendChild(opt);
+  });
+
+  roomSelect.value = rooms.includes(prevRoom) ? prevRoom : 'all';
+}
+
+function handleFactionReportFilterChange() {
+  if (window.__lastReportStats) {
+    const factionSelect = document.getElementById('factionReportFilter');
+    const roomSelect = document.getElementById('roomReportFilter');
+    const selectedFaction = factionSelect ? factionSelect.value : 'all';
+    const rooms = getRoomsFromStats(window.__lastReportStats, selectedFaction);
+
+    if (roomSelect) {
+      const prevRoom = roomSelect.value || 'all';
+      roomSelect.innerHTML = '<option value="all">ทุกห้องเรียน</option>';
+      rooms.forEach(room => {
+        const opt = document.createElement('option');
+        opt.value = room;
+        opt.textContent = room;
+        roomSelect.appendChild(opt);
+      });
+      roomSelect.value = rooms.includes(prevRoom) ? prevRoom : 'all';
+    }
+  }
+  applyReportFilters();
+}
+
+function applyReportFilters() {
+  const factionSelect = document.getElementById('factionReportFilter');
+  const roomSelect = document.getElementById('roomReportFilter');
+  const selectedFaction = factionSelect ? factionSelect.value : 'all';
+  const selectedRoom = roomSelect ? roomSelect.value : 'all';
+
+  document.querySelectorAll('[data-faction], [data-room]').forEach(el => {
+    const faction = el.getAttribute('data-faction');
+    const room = el.getAttribute('data-room');
+
+    const factionOk = selectedFaction === 'all' || !faction || faction === selectedFaction;
+    const roomOk = selectedRoom === 'all' || !room || room === selectedRoom;
+
+    el.classList.toggle('report-filter-hidden', !(factionOk && roomOk));
+  });
+
+  updateReportFilterEmptyMessages(selectedFaction, selectedRoom);
+}
+
+function updateReportFilterEmptyMessages(selectedFaction, selectedRoom) {
+  document.querySelectorAll('[data-filter-empty]').forEach(el => el.remove());
+
+  const sections = [
+    { key: 'faction-turnout', selector: 'tr[data-faction]:not(.report-filter-hidden)', text: 'ไม่พบข้อมูลคณะสีที่เลือก' },
+    { key: 'room-turnout', selector: 'tr[data-room]:not(.report-filter-hidden)', text: 'ไม่พบข้อมูลห้องเรียนที่เลือก' },
+    { key: 'scores', selector: '.faction-block[data-faction]:not(.report-filter-hidden)', text: 'ไม่พบผลคะแนนตามเงื่อนไขที่เลือก' },
+    { key: 'winners', selector: 'tr[data-faction]:not(.report-filter-hidden)', text: 'ไม่พบข้อมูลผู้ได้คะแนนสูงสุดตามเงื่อนไขที่เลือก' },
+    { key: 'room-list', selector: '.room-list-block[data-room]:not(.report-filter-hidden)', text: 'ไม่พบรายชื่อผู้มีสิทธิ์ตามเงื่อนไขที่เลือก' }
+  ];
+
+  sections.forEach(item => {
+    const section = document.querySelector(`[data-report-section="${item.key}"]`);
+    if (!section) return;
+
+    const visible = section.querySelectorAll(item.selector).length;
+    if (visible === 0) {
+      const note = document.createElement('div');
+      note.setAttribute('data-filter-empty', 'true');
+      note.className = 'text-muted';
+      note.style.marginTop = '10px';
+      note.textContent = item.text;
+      section.appendChild(note);
+    }
+  });
+}
+
+function resetReportFilters() {
+  const factionSelect = document.getElementById('factionReportFilter');
+  const roomSelect = document.getElementById('roomReportFilter');
+  if (factionSelect) factionSelect.value = 'all';
+  if (window.__lastReportStats) {
+    populateReportFilters(window.__lastReportStats);
+  }
+  if (roomSelect) roomSelect.value = 'all';
+  applyReportFilters();
+}
+
+/* compatibility with older buttons/functions */
+function populateRoomReportFilter(stats) {
+  window.__lastReportStats = stats;
+  populateReportFilters(stats);
+}
+function applyRoomReportFilter() {
+  applyReportFilters();
+}
+function resetRoomReportFilter() {
+  resetReportFilters();
 }
 
 </script>
