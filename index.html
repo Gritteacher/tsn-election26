@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>พบกันใหม่ในกิจกรรมถัดไป | โรงเรียนเทพศิรินทร์ นนทบุรี</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #006633;
+      --yellow: #ffcc00;
+      --dark: #10251b;
+      --glass: rgba(255,255,255,.72);
+      --border: rgba(255,255,255,.46);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Mitr', sans-serif;
+      font-weight: 300;
+      color: var(--dark);
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255,204,0,.38), transparent 28%),
+        radial-gradient(circle at 88% 8%, rgba(0,102,51,.25), transparent 30%),
+        radial-gradient(circle at 50% 90%, rgba(0,102,51,.18), transparent 32%),
+        linear-gradient(135deg, #f8fff9 0%, #fffbea 52%, #edf8f1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+    }
+    .card {
+      width: min(760px, 100%);
+      border-radius: 34px;
+      padding: clamp(28px, 5vw, 48px);
+      background: var(--glass);
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 70px rgba(0,0,0,.12);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -80px auto auto -80px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(255,204,0,.25);
+      filter: blur(6px);
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: auto -90px -90px auto;
+      width: 210px;
+      height: 210px;
+      border-radius: 50%;
+      background: rgba(0,102,51,.16);
+      filter: blur(7px);
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+    .logo {
+      width: 112px;
+      height: 112px;
+      object-fit: contain;
+      margin-bottom: 18px;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.14));
+    }
+    h1 {
+      margin: 0;
+      color: var(--green);
+      font-size: clamp(2rem, 6vw, 3.4rem);
+      font-weight: 400;
+      line-height: 1.15;
+    }
+    .subtitle {
+      margin: 14px auto 0;
+      max-width: 580px;
+      color: #596b61;
+      font-size: clamp(1rem, 2.4vw, 1.25rem);
+      line-height: 1.7;
+    }
+    .event-name {
+      margin-top: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.65);
+      color: #365144;
+      font-size: .95rem;
+    }
+    .admin-zone {
+      margin-top: 30px;
+      padding-top: 18px;
+      border-top: 1px dashed rgba(0,0,0,.13);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    button, a, input {
+      font-family: 'Mitr', sans-serif;
+      font-weight: 300;
+    }
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 20px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: .2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-admin {
+      background: var(--green);
+      color: white;
+      box-shadow: 0 12px 24px rgba(0,102,51,.18);
+    }
+    .btn-light {
+      background: rgba(255,255,255,.75);
+      color: var(--green);
+      border: 1px solid rgba(0,102,51,.13);
+    }
+    .admin-panel {
+      display: none;
+      margin-top: 22px;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.70);
+      border: 1px solid rgba(255,255,255,.62);
+      text-align: left;
+    }
+    .admin-panel.show { display: block; }
+    .admin-panel h2 {
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 1.2rem;
+      font-weight: 400;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      border: 1px solid rgba(0,0,0,.1);
+      border-radius: 999px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      outline: none;
+      background: rgba(255,255,255,.86);
+    }
+    .admin-links {
+      display: none;
+      margin-top: 22px;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.70);
+      border: 1px solid rgba(255,255,255,.62);
+    }
+    .admin-links.show { display: block; }
+    .admin-links-title {
+      color: var(--green);
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .small-note {
+      color: #6f7c74;
+      font-size: .85rem;
+      margin-top: 12px;
+    }
+    @media (max-width: 620px) {
+      .link-grid { grid-template-columns: 1fr; }
+      .admin-zone { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="content">
+      <img class="logo" src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" alt="DSN Logo">
+      <h1>พบกันใหม่<br>ในกิจกรรมถัดไป</h1>
+      <p class="subtitle">
+        ขอบคุณทุกท่านที่ให้ความร่วมมือในการเข้าร่วมกิจกรรม
+        ระบบเลือกตั้งออนไลน์ได้ปิดการใช้งานสำหรับผู้เข้าชมทั่วไปแล้ว
+      </p>
+      <div class="event-name">🗳️ ระบบเลือกตั้งประธานนักเรียนคณะสี ประจำปีการศึกษา 2569</div>
+
+      <div id="adminLinks" class="admin-links">
+        <div class="admin-links-title">เมนูสำหรับผู้ดูแลระบบ</div>
+        <div class="link-grid">
+          <a class="btn btn-admin" href="admin.html">เข้าสู่ Admin</a>
+          <a class="btn btn-light" href="index.html">หน้าเลือกตั้ง</a>
+          <a class="btn btn-light" href="report.html">รายงานผล</a>
+          <button class="btn btn-light" onclick="logoutAdmin()">ออกจากระบบ</button>
+        </div>
+        <div class="small-note">บัญชีนี้ได้รับสิทธิ์ผู้ดูแลระบบแล้ว</div>
+      </div>
+
+      <div id="adminPanel" class="admin-panel">
+        <h2>เข้าสู่ระบบผู้ดูแล</h2>
+        <input id="loginEmail" type="email" placeholder="อีเมลผู้ดูแล">
+        <input id="loginPassword" type="password" placeholder="รหัสผ่าน">
+        <button class="btn btn-admin" style="width:100%" onclick="loginAdmin()">เข้าสู่ระบบ</button>
+      </div>
+
+      <div class="admin-zone">
+        <button id="adminToggleBtn" class="btn btn-light" onclick="toggleAdminPanel()">ผู้ดูแลระบบ</button>
+      </div>
+    </div>
+  </main>
+
+<script>
+const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+window.addEventListener('load', initPage);
+
+async function initPage() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return;
+
+  const ok = await checkAdmin(session.user);
+  if (ok) {
+    document.getElementById('adminLinks').classList.add('show');
+    document.getElementById('adminToggleBtn').style.display = 'none';
+  }
+}
+
+async function checkAdmin(user) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('admin_users')
+      .select('user_id,email')
+      .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+      .maybeSingle();
+    return !!data && !error;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function toggleAdminPanel() {
+  document.getElementById('adminPanel').classList.toggle('show');
+}
+
+async function loginAdmin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (!email || !password) {
+    return Swal.fire('แจ้งเตือน', 'กรุณากรอกอีเมลและรหัสผ่าน', 'warning');
+  }
+
+  Swal.fire({
+    title: 'กำลังเข้าสู่ระบบ...',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return Swal.fire('ไม่สำเร็จ', error.message, 'error');
+  }
+
+  const ok = await checkAdmin(data.user);
+  if (!ok) {
+    await supabaseClient.auth.signOut();
+    return Swal.fire('ไม่สำเร็จ', 'บัญชีนี้ไม่ได้อยู่ในรายการผู้ดูแล', 'error');
+  }
+
+  Swal.fire('สำเร็จ', 'เข้าสู่ระบบผู้ดูแลเรียบร้อยแล้ว', 'success')
+    .then(() => location.reload());
+}
+
+async function logoutAdmin() {
+  await supabaseClient.auth.signOut();
+  location.reload();
+}
+</script>
+</body>
+</html>
