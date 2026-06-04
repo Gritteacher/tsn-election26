@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รายงานผลการเลือกตั้งประธานนักเรียนคณะสี</title>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --green: #006633;
+      --yellow: #ffcc00;
+      --text: #1f2b24;
+      --muted: #66736b;
+      --border: #d9e2dc;
+      --light: #f6faf7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Mitr', sans-serif;
+      font-weight: 300;
+      color: var(--text);
+      background: #eef5f0;
+      line-height: 1.55;
+    }
+
+    .screen-toolbar {
+      max-width: 980px;
+      margin: 18px auto;
+      padding: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button,
+    .link-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-family: 'Mitr', sans-serif;
+      font-weight: 400;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--green);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .login-card {
+      max-width: 460px;
+      margin: 80px auto;
+      background: white;
+      padding: 28px;
+      border-radius: 24px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.08);
+    }
+
+    .login-card h2 {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-weight: 400;
+      text-align: center;
+    }
+
+    .login-card p {
+      margin-top: 0;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-family: 'Mitr', sans-serif;
+      font-weight: 300;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .report-page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 20px auto;
+      background: white;
+      padding: 18mm 16mm;
+      box-shadow: 0 14px 42px rgba(0,0,0,.10);
+    }
+
+    .report-header {
+      display: grid;
+      grid-template-columns: 74px 1fr 74px;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 4px solid var(--green);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .report-header img {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+    }
+
+    .report-title {
+      text-align: center;
+    }
+
+    .report-title h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--green);
+    }
+
+    .report-title h2 {
+      margin: 4px 0 0;
+      font-size: 17px;
+      font-weight: 300;
+      color: var(--text);
+    }
+
+    .report-meta {
+      text-align: right;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .section {
+      margin-top: 20px;
+      page-break-inside: avoid;
+    }
+
+    .section-title {
+      font-size: 17px;
+      font-weight: 400;
+      color: var(--green);
+      margin: 0 0 10px;
+      padding-left: 10px;
+      border-left: 5px solid var(--yellow);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .summary-card {
+      background: var(--light);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .summary-card .number {
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--green);
+      line-height: 1.2;
+    }
+
+    .summary-card .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin-top: 8px;
+    }
+
+    th {
+      background: var(--green);
+      color: white;
+      font-weight: 400;
+      padding: 8px;
+      border: 1px solid var(--green);
+      text-align: center;
+    }
+
+    td {
+      padding: 7px 8px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #fbfdfb;
+    }
+
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-muted { color: var(--muted); }
+    .winner {
+      background: #fff8d7 !important;
+    }
+
+    .faction-block {
+      margin-top: 18px;
+      page-break-inside: avoid;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .faction-head {
+      padding: 10px 12px;
+      color: white;
+      font-weight: 400;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .faction-body {
+      padding: 12px;
+    }
+
+    .signature-grid {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 34px;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+
+    .signature-line {
+      margin-top: 44px;
+      border-top: 1px dotted #555;
+      padding-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: var(--muted);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .screen-toolbar,
+      .login-card {
+        display: none !important;
+      }
+
+      .report-page {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+
+      .section {
+        page-break-inside: avoid;
+      }
+
+      .faction-block {
+        page-break-inside: avoid;
+      }
+    }
+
+    @media screen and (max-width: 900px) {
+      .report-page {
+        width: calc(100% - 24px);
+        min-height: auto;
+        padding: 20px;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .report-header {
+        grid-template-columns: 60px 1fr;
+      }
+
+      .report-header .right-logo {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loginView" class="login-card hidden">
+    <h2>เข้าสู่ระบบรายงานผล</h2>
+    <p>กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแล</p>
+    <input id="loginEmail" type="email" placeholder="อีเมลผู้ดูแล">
+    <input id="loginPassword" type="password" placeholder="รหัสผ่าน">
+    <button class="btn-primary" style="width:100%" onclick="loginAdmin()">เข้าสู่ระบบ</button>
+    <div style="text-align:center;margin-top:14px">
+      <a href="index.html" class="link-btn btn-secondary">กลับหน้าหลัก</a>
+    </div>
+  </div>
+
+  <div id="reportView" class="hidden">
+    <div class="screen-toolbar">
+      <div class="toolbar-left">
+        <a href="admin.html" class="link-btn btn-secondary">← กลับหน้า Admin</a>
+        <button class="btn-secondary" onclick="loadReport()">🔄 โหลดข้อมูลใหม่</button>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-primary" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+        <button class="btn-danger" onclick="logoutAdmin()">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <div class="report-page">
+      <div id="loadingBox" class="loading">กำลังโหลดรายงาน...</div>
+      <div id="reportContent" class="hidden">
+        <div class="report-header">
+          <img src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" alt="logo">
+          <div class="report-title">
+            <h1>รายงานผลการเลือกตั้งประธานนักเรียนคณะสี</h1>
+            <h2>โรงเรียนเทพศิรินทร์ นนทบุรี ประจำปีการศึกษา 2569</h2>
+          </div>
+          <img class="right-logo" src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" alt="logo">
+        </div>
+
+        <div class="report-meta" id="reportMeta"></div>
+
+        <div class="section">
+          <h3 class="section-title">1. สรุปภาพรวมการใช้สิทธิ์</h3>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="number" id="overallTotal">-</div>
+              <div class="label">ผู้มีสิทธิ์ทั้งหมด</div>
+            </div>
+            <div class="summary-card">
+              <div class="number" id="overallVoted">-</div>
+              <div class="label">ใช้สิทธิ์แล้ว</div>
+            </div>
+            <div class="summary-card">
+              <div class="number" id="overallNotVoted">-</div>
+              <div class="label">ยังไม่ใช้สิทธิ์</div>
+            </div>
+            <div class="summary-card">
+              <div class="number" id="overallTurnoutPercent">-</div>
+              <div class="label">ร้อยละผู้มาใช้สิทธิ์</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">2. สรุปผู้มาใช้สิทธิ์แยกตามคณะสี</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>คณะสี</th>
+                <th>ผู้มีสิทธิ์</th>
+                <th>ใช้สิทธิ์แล้ว</th>
+                <th>ยังไม่ใช้สิทธิ์</th>
+                <th>ร้อยละผู้มาใช้สิทธิ์</th>
+              </tr>
+            </thead>
+            <tbody id="turnoutByFactionBody"></tbody>
+          </table>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">3. ผลคะแนนแยกตามคณะสี</h3>
+          <div id="scoreByFactionContainer"></div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">4. สรุปผู้ได้รับคะแนนสูงสุด</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>คณะสี</th>
+                <th>ผู้ได้คะแนนสูงสุด</th>
+                <th>คะแนน</th>
+                <th>ร้อยละ</th>
+              </tr>
+            </thead>
+            <tbody id="winnerBody"></tbody>
+          </table>
+        </div>
+
+        <div class="signature-grid">
+          <div>
+            <div class="signature-line">
+              ลงชื่อ............................................................<br>
+              (............................................................)<br>
+              ผู้ตรวจสอบรายงาน
+            </div>
+          </div>
+          <div>
+            <div class="signature-line">
+              ลงชื่อ............................................................<br>
+              (นายกฤษณพล ทองอุ่น)<br>
+              ผู้ดูแลระบบเลือกตั้ง
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const SUPABASE_URL = 'https://wvucxiieuckmepnywvol.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const factionColors = {
+  'คณะแม้นนฤมิตร': '#6f42c1',
+  'คณะเยาวมาลย์อุทิศ': '#0d6efd',
+  'คณะนิภานภดล': '#fd7e14',
+  'คณะปิยราชบพิตร': '#d63384',
+  'คณะภาณุรังษี': '#dc3545'
+};
+
+const factionOrder = [
+  'คณะแม้นนฤมิตร',
+  'คณะเยาวมาลย์อุทิศ',
+  'คณะนิภานภดล',
+  'คณะปิยราชบพิตร',
+  'คณะภาณุรังษี'
+];
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[m]));
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString('th-TH');
+}
+
+function percent(part, total) {
+  if (!total || total <= 0) return '0.00%';
+  return ((Number(part || 0) / Number(total)) * 100).toFixed(2) + '%';
+}
+
+function nowThaiText() {
+  return new Date().toLocaleString('th-TH', {
+    timeZone: 'Asia/Bangkok',
+    dateStyle: 'long',
+    timeStyle: 'short'
+  });
+}
+
+window.addEventListener('load', initReport);
+
+async function initReport() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+    document.getElementById('loginView').classList.remove('hidden');
+    return;
+  }
+
+  const ok = await checkAdmin(session.user);
+  if (!ok) {
+    await supabaseClient.auth.signOut();
+    document.getElementById('loginView').classList.remove('hidden');
+    Swal.fire('ไม่สำเร็จ', 'บัญชีนี้ไม่ได้อยู่ในรายการผู้ดูแล', 'error');
+    return;
+  }
+
+  document.getElementById('reportView').classList.remove('hidden');
+  await loadReport();
+}
+
+async function checkAdmin(user) {
+  const { data, error } = await supabaseClient
+    .from('admin_users')
+    .select('user_id,email')
+    .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+    .maybeSingle();
+
+  return !!data && !error;
+}
+
+async function loginAdmin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (!email || !password) {
+    return Swal.fire('แจ้งเตือน', 'กรุณากรอกอีเมลและรหัสผ่าน', 'warning');
+  }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return Swal.fire('ไม่สำเร็จ', error.message, 'error');
+  }
+
+  const ok = await checkAdmin(data.user);
+  if (!ok) {
+    await supabaseClient.auth.signOut();
+    return Swal.fire('ไม่สำเร็จ', 'บัญชีนี้ไม่ได้อยู่ในรายการผู้ดูแล', 'error');
+  }
+
+  location.reload();
+}
+
+async function logoutAdmin() {
+  await supabaseClient.auth.signOut();
+  location.href = 'index.html';
+}
+
+function blankStats() {
+  const stats = {};
+  factionOrder.forEach(f => {
+    stats[f] = {
+      total: 0,
+      voted: 0,
+      notVoted: 0,
+      choices: {},
+      noVote: 0
+    };
+  });
+  return stats;
+}
+
+async function loadReport() {
+  const loading = document.getElementById('loadingBox');
+  const content = document.getElementById('reportContent');
+
+  loading.classList.remove('hidden');
+  content.classList.add('hidden');
+  loading.textContent = 'กำลังโหลดรายงาน...';
+
+  try {
+    const [tokensRes, candidatesRes, votesRes] = await Promise.all([
+      supabaseClient.from('tokens').select('token_code, faction, is_used, room'),
+      supabaseClient.from('candidates').select('id, faction, number, name').order('faction').order('number'),
+      supabaseClient.from('votes').select('token_code, candidate_id, candidates(id, faction, number, name)')
+    ]);
+
+    if (tokensRes.error) throw tokensRes.error;
+    if (candidatesRes.error) throw candidatesRes.error;
+    if (votesRes.error) throw votesRes.error;
+
+    const tokens = tokensRes.data || [];
+    const candidates = candidatesRes.data || [];
+    const votes = votesRes.data || [];
+
+    const stats = blankStats();
+    const tokenFactionMap = {};
+
+    tokens.forEach(t => {
+      const faction = t.faction || 'ไม่ระบุคณะสี';
+      tokenFactionMap[t.token_code] = faction;
+
+      if (!stats[faction]) {
+        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+      }
+
+      stats[faction].total++;
+      if (t.is_used) stats[faction].voted++;
+    });
+
+    Object.keys(stats).forEach(f => {
+      stats[f].notVoted = Math.max(stats[f].total - stats[f].voted, 0);
+    });
+
+    candidates.forEach(c => {
+      const faction = c.faction || 'ไม่ระบุคณะสี';
+      if (!stats[faction]) {
+        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+      }
+
+      const key = c.id;
+      stats[faction].choices[key] = {
+        id: c.id,
+        number: c.number,
+        name: c.name || '',
+        count: 0
+      };
+    });
+
+    votes.forEach(v => {
+      if (!v.candidate_id) {
+        const faction = tokenFactionMap[v.token_code] || 'ไม่ระบุคณะสี';
+        if (!stats[faction]) {
+          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+        }
+        stats[faction].noVote++;
+        return;
+      }
+
+      if (v.candidates) {
+        const faction = v.candidates.faction || 'ไม่ระบุคณะสี';
+        if (!stats[faction]) {
+          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+        }
+
+        if (!stats[faction].choices[v.candidate_id]) {
+          stats[faction].choices[v.candidate_id] = {
+            id: v.candidate_id,
+            number: v.candidates.number,
+            name: v.candidates.name || '',
+            count: 0
+          };
+        }
+
+        stats[faction].choices[v.candidate_id].count++;
+      }
+    });
+
+    renderReport(stats);
+
+    loading.classList.add('hidden');
+    content.classList.remove('hidden');
+  } catch (error) {
+    console.error(error);
+    loading.textContent = 'ไม่สามารถโหลดรายงานได้: ' + (error.message || '');
+    Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถโหลดรายงานได้', 'error');
+  }
+}
+
+function renderReport(stats) {
+  const allFactions = Object.keys(stats);
+  const total = allFactions.reduce((sum, f) => sum + stats[f].total, 0);
+  const voted = allFactions.reduce((sum, f) => sum + stats[f].voted, 0);
+  const notVoted = Math.max(total - voted, 0);
+
+  document.getElementById('reportMeta').textContent = 'ออกรายงานเมื่อ ' + nowThaiText();
+  document.getElementById('overallTotal').textContent = formatNumber(total);
+  document.getElementById('overallVoted').textContent = formatNumber(voted);
+  document.getElementById('overallNotVoted').textContent = formatNumber(notVoted);
+  document.getElementById('overallTurnoutPercent').textContent = percent(voted, total);
+
+  renderTurnoutByFaction(stats);
+  renderScoresByFaction(stats);
+  renderWinners(stats);
+}
+
+function sortedFactionNames(stats) {
+  const extras = Object.keys(stats).filter(f => !factionOrder.includes(f));
+  return [...factionOrder.filter(f => stats[f]), ...extras];
+}
+
+function renderTurnoutByFaction(stats) {
+  const body = document.getElementById('turnoutByFactionBody');
+  body.innerHTML = sortedFactionNames(stats).map(f => {
+    const s = stats[f];
+    return `
+      <tr>
+        <td>${escapeHTML(f)}</td>
+        <td class="text-center">${formatNumber(s.total)}</td>
+        <td class="text-center">${formatNumber(s.voted)}</td>
+        <td class="text-center">${formatNumber(s.notVoted)}</td>
+        <td class="text-center">${percent(s.voted, s.total)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderScoresByFaction(stats) {
+  const container = document.getElementById('scoreByFactionContainer');
+
+  container.innerHTML = sortedFactionNames(stats).map(f => {
+    const s = stats[f];
+    const color = factionColors[f] || '#6c757d';
+    const choices = Object.values(s.choices || {})
+      .sort((a, b) => Number(b.count || 0) - Number(a.count || 0));
+
+    const validVoteTotal = choices.reduce((sum, c) => sum + Number(c.count || 0), 0) + Number(s.noVote || 0);
+
+    const rows = [];
+
+    choices.forEach((c, index) => {
+      rows.push(`
+        <tr class="${index === 0 && Number(c.count || 0) > 0 ? 'winner' : ''}">
+          <td class="text-center">${index + 1}</td>
+          <td class="text-center">${escapeHTML(c.number || '-')}</td>
+          <td>${escapeHTML(c.name || '-')}</td>
+          <td class="text-center">${formatNumber(c.count)}</td>
+          <td class="text-center">${percent(c.count, validVoteTotal)}</td>
+        </tr>
+      `);
+    });
+
+    rows.push(`
+      <tr>
+        <td class="text-center">-</td>
+        <td class="text-center">-</td>
+        <td>ไม่ประสงค์ลงคะแนน</td>
+        <td class="text-center">${formatNumber(s.noVote)}</td>
+        <td class="text-center">${percent(s.noVote, validVoteTotal)}</td>
+      </tr>
+    `);
+
+    return `
+      <div class="faction-block">
+        <div class="faction-head" style="background:${color}">
+          <span>${escapeHTML(f)}</span>
+          <span>คะแนนรวม ${formatNumber(validVoteTotal)} คะแนน</span>
+        </div>
+        <div class="faction-body">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:60px">อันดับ</th>
+                <th style="width:70px">เบอร์</th>
+                <th>ชื่อผู้สมัคร / ตัวเลือก</th>
+                <th style="width:90px">คะแนน</th>
+                <th style="width:90px">ร้อยละ</th>
+              </tr>
+            </thead>
+            <tbody>${rows.join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderWinners(stats) {
+  const body = document.getElementById('winnerBody');
+
+  body.innerHTML = sortedFactionNames(stats).map(f => {
+    const s = stats[f];
+    const choices = Object.values(s.choices || {})
+      .sort((a, b) => Number(b.count || 0) - Number(a.count || 0));
+
+    const validVoteTotal = choices.reduce((sum, c) => sum + Number(c.count || 0), 0) + Number(s.noVote || 0);
+    const winner = choices[0];
+
+    if (!winner || Number(winner.count || 0) === 0) {
+      return `
+        <tr>
+          <td>${escapeHTML(f)}</td>
+          <td class="text-muted">ยังไม่มีคะแนนผู้สมัคร</td>
+          <td class="text-center">0</td>
+          <td class="text-center">0.00%</td>
+        </tr>
+      `;
+    }
+
+    return `
+      <tr>
+        <td>${escapeHTML(f)}</td>
+        <td>เบอร์ ${escapeHTML(winner.number)} ${escapeHTML(winner.name)}</td>
+        <td class="text-center">${formatNumber(winner.count)}</td>
+        <td class="text-center">${percent(winner.count, validVoteTotal)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+</script>
+</body>
+</html>
