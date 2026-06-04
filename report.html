@@ -364,6 +364,47 @@
       color: #b02a37;
     }
 
+  
+    .report-options-panel {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: white;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      align-items: center;
+    }
+
+    .report-options-panel .options-title {
+      width: 100%;
+      color: var(--green);
+      font-weight: 400;
+      margin-bottom: 2px;
+    }
+
+    .report-options-panel label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .report-options-panel input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      accent-color: var(--green);
+    }
+
+    .report-section-hidden {
+      display: none !important;
+    }
+
   </style>
 </head>
 
@@ -384,8 +425,21 @@
       <div class="toolbar-left">
         <a href="admin.html" class="link-btn btn-secondary">← กลับหน้า Admin</a>
         <button class="btn-secondary" onclick="loadReport()">🔄 โหลดข้อมูลใหม่</button>
+
+      <div class="report-options-panel">
+        <div class="options-title">เลือกหัวข้อที่ต้องการแสดงในรายงาน</div>
+        <label><input type="checkbox" class="report-option" data-section="summary" checked onchange="applyReportOptions()"> สรุปภาพรวม</label>
+        <label><input type="checkbox" class="report-option" data-section="faction-turnout" checked onchange="applyReportOptions()"> สรุปแยกตามคณะสี</label>
+        <label><input type="checkbox" class="report-option" data-section="room-turnout" checked onchange="applyReportOptions()"> สรุปแยกตามห้องเรียน</label>
+        <label><input type="checkbox" class="report-option" data-section="scores" checked onchange="applyReportOptions()"> ผลคะแนนแยกตามคณะสี</label>
+        <label><input type="checkbox" class="report-option" data-section="winners" checked onchange="applyReportOptions()"> สรุปผู้ได้คะแนนสูงสุด</label>
+        <label><input type="checkbox" class="report-option" data-section="signatures" checked onchange="applyReportOptions()"> ช่องลงชื่อ</label>
+      </div>
+
       </div>
       <div class="toolbar-right">
+        <button class="btn-secondary" onclick="selectAllReportOptions(true)">เลือกทั้งหมด</button>
+        <button class="btn-secondary" onclick="selectAllReportOptions(false)">ล้างทั้งหมด</button>
         <button class="btn-primary" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
         <button class="btn-danger" onclick="logoutAdmin()">ออกจากระบบ</button>
       </div>
@@ -405,7 +459,7 @@
 
         <div class="report-meta" id="reportMeta"></div>
 
-        <div class="section">
+        <div class="section report-section" data-report-section="summary">
           <h3 class="section-title">1. สรุปภาพรวมการใช้สิทธิ์</h3>
           <div class="summary-grid">
             <div class="summary-card">
@@ -427,7 +481,7 @@
           </div>
         </div>
 
-        <div class="section">
+        <div class="section report-section" data-report-section="faction-turnout">
           <h3 class="section-title">2. สรุปผู้มาใช้สิทธิ์แยกตามคณะสี</h3>
           <table>
             <thead>
@@ -443,17 +497,17 @@
           </table>
         </div>
 
-        <div class="section">
+        <div class="section report-section" data-report-section="room-turnout">
           <h3 class="section-title">3. สรุปการใช้สิทธิ์รายคณะสี แยกตามห้องเรียน</h3>
           <div id="roomTurnoutByFactionContainer"></div>
         </div>
 
-        <div class="section">
+        <div class="section report-section" data-report-section="scores">
           <h3 class="section-title">4. ผลคะแนนแยกตามคณะสี</h3>
           <div id="scoreByFactionContainer"></div>
         </div>
 
-        <div class="section">
+        <div class="section report-section" data-report-section="winners">
           <h3 class="section-title">5. สรุปผู้ได้รับคะแนนสูงสุด</h3>
           <table>
             <thead>
@@ -468,7 +522,7 @@
           </table>
         </div>
 
-        <div class="signature-grid">
+        <div class="signature-grid report-section" data-report-section="signatures">
           <div>
             <div class="signature-line">
               ลงชื่อ............................................................<br>
@@ -719,6 +773,7 @@ async function loadReport() {
 
     loading.classList.add('hidden');
     content.classList.remove('hidden');
+    applyReportOptions();
   } catch (error) {
     console.error(error);
     loading.textContent = 'ไม่สามารถโหลดรายงานได้: ' + (error.message || '');
@@ -925,6 +980,25 @@ function renderWinners(stats) {
     `;
   }).join('');
 }
+
+function applyReportOptions() {
+  const options = document.querySelectorAll('.report-option');
+  options.forEach(opt => {
+    const sectionName = opt.dataset.section;
+    const elements = document.querySelectorAll(`[data-report-section="${sectionName}"]`);
+    elements.forEach(el => {
+      el.classList.toggle('report-section-hidden', !opt.checked);
+    });
+  });
+}
+
+function selectAllReportOptions(isChecked) {
+  document.querySelectorAll('.report-option').forEach(opt => {
+    opt.checked = !!isChecked;
+  });
+  applyReportOptions();
+}
+
 </script>
 </body>
 </html>
