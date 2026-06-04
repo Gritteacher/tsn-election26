@@ -257,6 +257,52 @@
       font-weight: 300 !important;
     }
     
+  
+    .home-turnout-card {
+      max-width: 760px;
+      margin: 20px auto 22px;
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(255,255,255,.58);
+      box-shadow: 0 14px 34px rgba(0,0,0,.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .home-turnout-percent {
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      line-height: 1;
+      color: #006633;
+      font-weight: 400;
+    }
+    .home-turnout-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .home-turnout-mini {
+      border-radius: 18px;
+      padding: 12px 10px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(0,0,0,.04);
+    }
+    .home-turnout-mini .num {
+      font-size: 1.35rem;
+      color: #143825;
+      font-weight: 400;
+    }
+    .home-turnout-mini .label {
+      font-size: .86rem;
+      color: #6c757d;
+      font-weight: 300;
+    }
+    @media (max-width: 576px) {
+      .home-turnout-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -277,6 +323,29 @@
         <div class="alert alert-warning border-0 rounded-4 mx-auto" style="max-width:680px;background:rgba(255,248,218,.8)">
           <b>คำเตือน:</b> โปรดใช้สิทธิ์ด้วยความซื่อสัตย์สุจริต และตรวจสอบข้อมูลก่อนยืนยัน
         </div>
+
+        <div id="homeTurnoutCard" class="home-turnout-card">
+          <div class="small text-muted mb-2">ภาพรวมการใช้สิทธิ์ทั้งหมด</div>
+          <div id="homeTurnoutPercent" class="home-turnout-percent">กำลังโหลด...</div>
+          <div class="progress mt-3" style="height:18px;border-radius:999px;background:rgba(0,0,0,.08)">
+            <div id="homeTurnoutBar" class="progress-bar bg-success" style="width:0%;border-radius:999px"></div>
+          </div>
+          <div class="home-turnout-grid">
+            <div class="home-turnout-mini">
+              <div id="homeTurnoutTotal" class="num">-</div>
+              <div class="label">ผู้มีสิทธิ์ทั้งหมด</div>
+            </div>
+            <div class="home-turnout-mini">
+              <div id="homeTurnoutVoted" class="num">-</div>
+              <div class="label">ใช้สิทธิ์แล้ว</div>
+            </div>
+            <div class="home-turnout-mini">
+              <div id="homeTurnoutRemaining" class="num">-</div>
+              <div class="label">ยังไม่ใช้สิทธิ์</div>
+            </div>
+          </div>
+        </div>
+
         <div class="d-flex flex-column align-items-center gap-3">
           <button class="btn btn-dsn btn-lg w-100" style="max-width:380px" onclick="showView('view-factions')">🗳️ เข้าสู่ระบบการลงคะแนน</button>
           <button class="btn btn-outline-success btn-lg rounded-pill w-100" style="max-width:380px" onclick="showTurnoutView()">📈 ดูสถิติผู้มาใช้สิทธิ์</button>
@@ -439,6 +508,7 @@ function showTurnoutView() {
 }
 
 window.addEventListener('load', async () => {
+  loadHomeTurnoutSummary();
   trackPageView('student');
   const { data, error } = await supabaseClient.from('candidates').select('*').order('faction').order('number');
   if (error) {
@@ -653,6 +723,53 @@ async function trackPageView(pageName = 'student') {
     });
   } catch (error) {
     console.warn('trackPageView error:', error);
+  }
+}
+
+
+async function loadHomeTurnoutSummary() {
+  const percentEl = document.getElementById('homeTurnoutPercent');
+  const barEl = document.getElementById('homeTurnoutBar');
+  const totalEl = document.getElementById('homeTurnoutTotal');
+  const votedEl = document.getElementById('homeTurnoutVoted');
+  const remainingEl = document.getElementById('homeTurnoutRemaining');
+
+  if (!percentEl || !barEl || !totalEl || !votedEl || !remainingEl) return;
+
+  try {
+    let total = 0;
+    let voted = 0;
+
+    const rpcResult = await supabaseClient.rpc('public_turnout_summary');
+
+    if (!rpcResult.error && rpcResult.data) {
+      (rpcResult.data || []).forEach(row => {
+        total += Number(row.total || 0);
+        voted += Number(row.voted || 0);
+      });
+    } else {
+      // fallback กรณียังไม่ได้รัน RPC public_turnout_summary
+      const { data, error } = await supabaseClient.from('tokens').select('is_used');
+      if (error) throw error;
+      total = (data || []).length;
+      voted = (data || []).filter(t => t.is_used === true).length;
+    }
+
+    const remaining = Math.max(total - voted, 0);
+    const percent = total > 0 ? (voted / total) * 100 : 0;
+    const percentText = percent.toFixed(2) + '%';
+
+    percentEl.textContent = percentText;
+    barEl.style.width = Math.min(percent, 100).toFixed(2) + '%';
+    totalEl.textContent = total.toLocaleString('th-TH');
+    votedEl.textContent = voted.toLocaleString('th-TH');
+    remainingEl.textContent = remaining.toLocaleString('th-TH');
+  } catch (error) {
+    console.error('loadHomeTurnoutSummary error:', error);
+    percentEl.textContent = 'ไม่สามารถโหลดได้';
+    totalEl.textContent = '-';
+    votedEl.textContent = '-';
+    remainingEl.textContent = '-';
   }
 }
 
