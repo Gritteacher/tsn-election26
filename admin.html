@@ -138,6 +138,12 @@
             <option value="คณะภาณุรังษี">❤️ คณะภาณุรังษี</option>
           </select>
           <div style="height:450px"><canvas id="scoreChart"></canvas></div>
+          <div class="table-responsive mt-4">
+            <table class="table table-hover align-middle text-center">
+              <thead><tr><th>คณะสี</th><th>ตัวเลือก</th><th>คะแนน</th><th>ร้อยละ</th></tr></thead>
+              <tbody id="scoreSummaryBody"><tr><td colspan="4" class="text-center text-muted py-3">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -449,55 +455,173 @@ async function deleteCandidate(id) {
   loadCandidates();
 }
 
-async function loadLiveScores() {
-  const { data: votes, error } = await supabaseClient.from('votes').select('candidate_id, candidates(faction, number, name)');
-  if (error) return Swal.fire('ไม่สำเร็จ', error.message, 'error');
 
-  const stats = { 'งดออกเสียง': 0 };
-  (votes || []).forEach(v => {
-    if (!v.candidate_id) stats['งดออกเสียง']++;
-    else if (v.candidates) {
-      const f = v.candidates.faction;
-      const n = `เบอร์ ${v.candidates.number}`;
-      if (!stats[f]) stats[f] = {};
-      stats[f][n] = (stats[f][n] || 0) + 1;
-    }
-  });
-  Object.keys(factionColors).forEach(f => { if (f !== 'งดออกเสียง' && !stats[f]) stats[f] = {}; });
-  latestScores = stats;
-  renderChart();
+function formatPercent(value, total) {
+  if (!total || total <= 0) return '0.00%';
+  return ((value / total) * 100).toFixed(2) + '%';
+}
+
+function getChoiceTotal(choiceMap) {
+  return Object.values(choiceMap || {}).reduce((sum, item) => sum + Number(item.count || 0), 0);
+}
+
+async function loadLiveScores() {
+  try {
+    const [votesRes, tokensRes, candidatesRes] = await Promise.all([
+      supabaseClient.from('votes').select('token_code, candidate_id, candidates(faction, number, name)'),
+      supabaseClient.from('tokens').select('token_code, faction'),
+      supabaseClient.from('candidates').select('id, faction, number, name').order('faction').order('number')
+    ]);
+
+    if (votesRes.error) throw votesRes.error;
+    if (tokensRes.error) throw tokensRes.error;
+    if (candidatesRes.error) throw candidatesRes.error;
+
+    const tokenFactionMap = {};
+    (tokensRes.data || []).forEach(t => { tokenFactionMap[t.token_code] = t.faction; });
+
+    const stats = {};
+    Object.keys(factionColors).forEach(f => {
+      if (f !== 'งดออกเสียง') stats[f] = {};
+    });
+
+    (candidatesRes.data || []).forEach(c => {
+      if (!stats[c.faction]) stats[c.faction] = {};
+      const label = `เบอร์ ${c.number} ${c.name || ''}`.trim();
+      stats[c.faction][label] = {
+        count: 0,
+        color: factionColors[c.faction] || '#6c757d',
+        type: 'candidate'
+      };
+    });
+
+    Object.keys(stats).forEach(f => {
+      stats[f]['ไม่ประสงค์ลงคะแนน'] = { count: 0, color: '#6c757d', type: 'no_vote' };
+    });
+
+    (votesRes.data || []).forEach(v => {
+      if (!v.candidate_id) {
+        const faction = tokenFactionMap[v.token_code] || 'ไม่ระบุคณะสี';
+        if (!stats[faction]) stats[faction] = {};
+        if (!stats[faction]['ไม่ประสงค์ลงคะแนน']) {
+          stats[faction]['ไม่ประสงค์ลงคะแนน'] = { count: 0, color: '#6c757d', type: 'no_vote' };
+        }
+        stats[faction]['ไม่ประสงค์ลงคะแนน'].count++;
+      } else if (v.candidates) {
+        const faction = v.candidates.faction;
+        const label = `เบอร์ ${v.candidates.number} ${v.candidates.name || ''}`.trim();
+        if (!stats[faction]) stats[faction] = {};
+        if (!stats[faction][label]) {
+          stats[faction][label] = { count: 0, color: factionColors[faction] || '#6c757d', type: 'candidate' };
+        }
+        stats[faction][label].count++;
+      }
+    });
+
+    latestScores = stats;
+    renderChart();
+  } catch (error) {
+    console.error('loadLiveScores error:', error);
+    Swal.fire('ไม่สำเร็จ', error.message || 'ไม่สามารถโหลดผลคะแนนได้', 'error');
+  }
+}
+
+function renderScoreSummaryTable(rows) {
+  const body = document.getElementById('scoreSummaryBody');
+  if (!body) return;
+  if (!rows || rows.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">ยังไม่มีข้อมูลคะแนน</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHTML(r.faction)}</td>
+      <td class="text-start">${escapeHTML(r.choice)}</td>
+      <td>${Number(r.count).toLocaleString('th-TH')}</td>
+      <td>${escapeHTML(r.percent)}</td>
+    </tr>
+  `).join('');
 }
 
 function renderChart() {
   if (!latestScores) return;
-  const scores = latestScores;
   const filter = document.getElementById('scoreFilter').value;
   const ctx = document.getElementById('scoreChart').getContext('2d');
-  let labels = [], dataPoints = [], bgColors = [];
+
+  let labels = [], dataPoints = [], bgColors = [], tableRows = [];
 
   if (filter === 'all') {
     Object.keys(factionColors).forEach(f => {
-      labels.push(window.innerWidth < 768 ? f.replace('คณะ','') : f);
-      const total = f === 'งดออกเสียง' ? (scores[f] || 0) : Object.values(scores[f] || {}).reduce((a,b)=>a+b,0);
-      dataPoints.push(total);
-      bgColors.push(factionColors[f]);
+      if (f === 'งดออกเสียง') return;
+      const choiceMap = latestScores[f] || {};
+      const factionTotal = getChoiceTotal(choiceMap);
+      labels.push(window.innerWidth < 768 ? f.replace('คณะ', '') : f);
+      dataPoints.push(factionTotal);
+      bgColors.push(factionColors[f] || '#6c757d');
+      Object.keys(choiceMap).forEach(choice => {
+        const count = Number(choiceMap[choice].count || 0);
+        tableRows.push({ faction: f, choice, count, percent: formatPercent(count, factionTotal) });
+      });
     });
   } else {
-    Object.keys(scores[filter] || {}).forEach(c => {
-      labels.push(c); dataPoints.push(scores[filter][c]); bgColors.push(factionColors[filter]);
+    const choiceMap = latestScores[filter] || {};
+    const factionTotal = getChoiceTotal(choiceMap);
+    Object.keys(choiceMap).forEach(choice => {
+      const count = Number(choiceMap[choice].count || 0);
+      labels.push(choice);
+      dataPoints.push(count);
+      bgColors.push(choiceMap[choice].color || factionColors[filter] || '#6c757d');
+      tableRows.push({ faction: filter, choice, count, percent: formatPercent(count, factionTotal) });
     });
   }
 
+  renderScoreSummaryTable(tableRows);
+
   if (myChart) myChart.destroy();
   Chart.register(ChartDataLabels);
+
+  const totalForChart = dataPoints.reduce((sum, n) => sum + Number(n || 0), 0);
+
   myChart = new Chart(ctx, {
-    type:'bar',
-    data: { labels, datasets:[{ data:dataPoints, backgroundColor:bgColors, borderRadius:12 }] },
+    type: 'bar',
+    data: { labels, datasets: [{ data: dataPoints, backgroundColor: bgColors, borderRadius: 12 }] },
     options: {
-      responsive:true, maintainAspectRatio:false,
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 36 } },
       plugins: {
-        legend: { display:false },
-        datalabels: { color:'white', anchor:'end', align:'start', font:{ family:'Mitr', weight:'400', size:18 }, display:c=>c.dataset.data[c.dataIndex]>0 }
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = Number(context.raw || 0);
+              const percent = totalForChart ? ((value / totalForChart) * 100).toFixed(2) : '0.00';
+              return `${value.toLocaleString('th-TH')} คะแนน (${percent}%)`;
+            }
+          }
+        },
+        datalabels: {
+          color: '#fff',
+          anchor: 'end',
+          align: 'start',
+          font: { family: 'Mitr', weight: '400', size: 14 },
+          formatter: (value) => {
+            const percent = totalForChart ? ((Number(value || 0) / totalForChart) * 100).toFixed(1) : '0.0';
+            return `${Number(value || 0).toLocaleString('th-TH')}\n${percent}%`;
+          },
+          display: (c) => Number(c.dataset.data[c.dataIndex] || 0) > 0
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: {
+          ticks: {
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return label.length > 18 ? label.slice(0, 18) + '…' : label;
+            }
+          }
+        }
       }
     }
   });
