@@ -336,6 +336,34 @@
         display: none;
       }
     }
+  
+    .room-summary-table th {
+      font-size: 11.5px;
+    }
+
+    .room-summary-table td {
+      font-size: 11.5px;
+      padding: 6px 7px;
+    }
+
+    .room-faction-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 6px 0 0;
+    }
+
+    .room-good {
+      color: #0f7a3a;
+    }
+
+    .room-warning {
+      color: #b77900;
+    }
+
+    .room-danger {
+      color: #b02a37;
+    }
+
   </style>
 </head>
 
@@ -416,12 +444,17 @@
         </div>
 
         <div class="section">
-          <h3 class="section-title">3. ผลคะแนนแยกตามคณะสี</h3>
+          <h3 class="section-title">3. สรุปการใช้สิทธิ์รายคณะสี แยกตามห้องเรียน</h3>
+          <div id="roomTurnoutByFactionContainer"></div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">4. ผลคะแนนแยกตามคณะสี</h3>
           <div id="scoreByFactionContainer"></div>
         </div>
 
         <div class="section">
-          <h3 class="section-title">4. สรุปผู้ได้รับคะแนนสูงสุด</h3>
+          <h3 class="section-title">5. สรุปผู้ได้รับคะแนนสูงสุด</h3>
           <table>
             <thead>
               <tr>
@@ -571,7 +604,8 @@ function blankStats() {
       voted: 0,
       notVoted: 0,
       choices: {},
-      noVote: 0
+      noVote: 0,
+      rooms: {}
     };
   });
   return stats;
@@ -608,21 +642,39 @@ async function loadReport() {
       tokenFactionMap[t.token_code] = faction;
 
       if (!stats[faction]) {
-        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
       }
 
       stats[faction].total++;
       if (t.is_used) stats[faction].voted++;
+
+      const room = t.room || 'ไม่ระบุห้อง';
+      if (!stats[faction].rooms[room]) {
+        stats[faction].rooms[room] = {
+          room,
+          total: 0,
+          voted: 0,
+          notVoted: 0
+        };
+      }
+
+      stats[faction].rooms[room].total++;
+      if (t.is_used) stats[faction].rooms[room].voted++;
     });
 
     Object.keys(stats).forEach(f => {
       stats[f].notVoted = Math.max(stats[f].total - stats[f].voted, 0);
+
+      Object.keys(stats[f].rooms || {}).forEach(room => {
+        const r = stats[f].rooms[room];
+        r.notVoted = Math.max(Number(r.total || 0) - Number(r.voted || 0), 0);
+      });
     });
 
     candidates.forEach(c => {
       const faction = c.faction || 'ไม่ระบุคณะสี';
       if (!stats[faction]) {
-        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+        stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
       }
 
       const key = c.id;
@@ -638,7 +690,7 @@ async function loadReport() {
       if (!v.candidate_id) {
         const faction = tokenFactionMap[v.token_code] || 'ไม่ระบุคณะสี';
         if (!stats[faction]) {
-          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
         }
         stats[faction].noVote++;
         return;
@@ -647,7 +699,7 @@ async function loadReport() {
       if (v.candidates) {
         const faction = v.candidates.faction || 'ไม่ระบุคณะสี';
         if (!stats[faction]) {
-          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0 };
+          stats[faction] = { total: 0, voted: 0, notVoted: 0, choices: {}, noVote: 0, rooms: {} };
         }
 
         if (!stats[faction].choices[v.candidate_id]) {
@@ -687,6 +739,7 @@ function renderReport(stats) {
   document.getElementById('overallTurnoutPercent').textContent = percent(voted, total);
 
   renderTurnoutByFaction(stats);
+  renderRoomTurnoutByFaction(stats);
   renderScoresByFaction(stats);
   renderWinners(stats);
 }
@@ -711,6 +764,74 @@ function renderTurnoutByFaction(stats) {
     `;
   }).join('');
 }
+
+
+function roomPercentClass(voted, total) {
+  if (!total || total <= 0) return '';
+  const p = (Number(voted || 0) / Number(total)) * 100;
+  if (p >= 80) return 'room-good';
+  if (p >= 50) return 'room-warning';
+  return 'room-danger';
+}
+
+function compareRoomName(a, b) {
+  return String(a).localeCompare(String(b), 'th', { numeric: true, sensitivity: 'base' });
+}
+
+function renderRoomTurnoutByFaction(stats) {
+  const container = document.getElementById('roomTurnoutByFactionContainer');
+  if (!container) return;
+
+  container.innerHTML = sortedFactionNames(stats).map(f => {
+    const s = stats[f];
+    const color = factionColors[f] || '#6c757d';
+    const rooms = Object.values(s.rooms || {}).sort((a, b) => compareRoomName(a.room, b.room));
+
+    const rows = rooms.length
+      ? rooms.map((r, index) => {
+          const pClass = roomPercentClass(r.voted, r.total);
+          return `
+            <tr>
+              <td class="text-center">${index + 1}</td>
+              <td>${escapeHTML(r.room)}</td>
+              <td class="text-center">${formatNumber(r.total)}</td>
+              <td class="text-center">${formatNumber(r.voted)}</td>
+              <td class="text-center">${formatNumber(r.notVoted)}</td>
+              <td class="text-center ${pClass}">${percent(r.voted, r.total)}</td>
+            </tr>
+          `;
+        }).join('')
+      : '<tr><td colspan="6" class="text-center text-muted">ไม่มีข้อมูลห้องเรียนในคณะสีนี้</td></tr>';
+
+    return `
+      <div class="faction-block">
+        <div class="faction-head" style="background:${color}">
+          <span>${escapeHTML(f)}</span>
+          <span>ใช้สิทธิ์ ${formatNumber(s.voted)} / ${formatNumber(s.total)} คน (${percent(s.voted, s.total)})</span>
+        </div>
+        <div class="faction-body">
+          <div class="room-faction-note">
+            แสดงจำนวนผู้มีสิทธิ์ ใช้สิทธิ์แล้ว และยังไม่มาใช้สิทธิ์ แยกตามห้องเรียน
+          </div>
+          <table class="room-summary-table">
+            <thead>
+              <tr>
+                <th style="width:50px">ลำดับ</th>
+                <th>ห้องเรียน</th>
+                <th style="width:90px">ผู้มีสิทธิ์</th>
+                <th style="width:90px">ใช้สิทธิ์แล้ว</th>
+                <th style="width:100px">ยังไม่ใช้สิทธิ์</th>
+                <th style="width:110px">ร้อยละ</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 
 function renderScoresByFaction(stats) {
   const container = document.getElementById('scoreByFactionContainer');
