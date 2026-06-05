@@ -1,154 +1,50 @@
-<!DOCTYPE html>
-<html lang="th"><head>
+<!DOCTYPE html><html lang="th"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>แบบประเมินความพึงพอใจ</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--green:#006633;--yellow:#ffcc00;--dark:#10251b;--muted:#66736b;--glass:rgba(255,255,255,.72);--border:rgba(255,255,255,.46)}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:'Mitr',sans-serif;font-weight:300;color:var(--dark);background:radial-gradient(circle at 10% 10%,rgba(255,204,0,.36),transparent 28%),radial-gradient(circle at 90% 5%,rgba(0,102,51,.26),transparent 30%),radial-gradient(circle at 50% 90%,rgba(0,102,51,.18),transparent 30%),linear-gradient(135deg,#f8fff9 0%,#fffbea 50%,#edf8f1 100%);background-attachment:fixed;padding:22px}.page{max-width:980px;margin:auto}.glass{background:var(--glass);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.1);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.header,.card{border-radius:30px;padding:24px;margin-bottom:20px}.header{text-align:center}.logo{width:92px;height:92px;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.15))}h1{margin:0;color:var(--green);font-size:clamp(1.55rem,4vw,2.45rem);font-weight:400;line-height:1.3}.subtitle{margin:8px auto 0;max-width:680px;color:var(--muted);line-height:1.7}.section-title{margin:0 0 16px;color:var(--green);font-size:1.2rem;font-weight:400;padding-left:12px;border-left:5px solid var(--yellow)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.field label{display:block;color:#33483c;margin-bottom:6px;font-size:.92rem}input,select,textarea{width:100%;border:1px solid rgba(0,0,0,.08);border-radius:18px;padding:12px 14px;font-family:'Mitr',sans-serif;font-weight:300;background:rgba(255,255,255,.82);outline:none}select{border-radius:999px}textarea{resize:vertical;min-height:110px;line-height:1.65}.scale-note{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 18px}.scale-note div{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.55);border-radius:16px;padding:10px;text-align:center;color:#445449;font-size:.9rem}.table-wrap{overflow-x:auto;border-radius:20px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.52)}table{width:100%;border-collapse:collapse;min-width:760px}th{background:var(--green);color:white;padding:12px 8px;font-weight:400;text-align:center;white-space:nowrap}td{border-bottom:1px solid rgba(0,0,0,.06);padding:10px 8px;text-align:center;background:rgba(255,255,255,.54)}tr:nth-child(even) td{background:rgba(255,255,255,.78)}.q{text-align:left;min-width:360px;color:#26352d;line-height:1.6}td input[type=radio]{width:22px;height:22px;accent-color:var(--green)}.actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:20px}.btn{border:0;border-radius:999px;padding:13px 28px;font-family:'Mitr',sans-serif;font-weight:400;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.2s ease}.btn:hover{transform:translateY(-1px)}.btn-primary{background:linear-gradient(135deg,var(--green),#0c8b4e);color:white;box-shadow:0 12px 24px rgba(0,102,51,.18)}.btn-light{background:rgba(255,255,255,.78);color:var(--green);border:1px solid rgba(0,102,51,.13)}.footer{text-align:center;color:var(--muted);font-size:.88rem;padding:14px 0 24px}@media(max-width:760px){body{padding:14px}.grid{grid-template-columns:1fr}.card{padding:18px;border-radius:24px}.scale-note{grid-template-columns:1fr}.btn{width:100%}}
-</style>
-</head><body>
+:root{--green:#006633;--green2:#0c8b4e;--yellow:#ffcc00;--dark:#10251b;--muted:#64736a;--glass:rgba(255,255,255,.72);--border:rgba(255,255,255,.46)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Mitr,sans-serif;font-weight:300;color:var(--dark);background:radial-gradient(circle at 10% 10%,rgba(255,204,0,.36),transparent 28%),radial-gradient(circle at 90% 5%,rgba(0,102,51,.26),transparent 30%),radial-gradient(circle at 50% 90%,rgba(0,102,51,.18),transparent 30%),linear-gradient(135deg,#f8fff9 0%,#fffbea 50%,#edf8f1 100%);background-attachment:fixed;padding:14px}
+.page{max-width:900px;margin:auto}.glass{background:var(--glass);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.10);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.head,.card{border-radius:26px;padding:18px;margin-bottom:16px}.head{text-align:center}.logo{width:82px;height:82px;object-fit:contain;margin-bottom:10px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.15))}h1{margin:0;color:var(--green);font-size:clamp(1.45rem,4vw,2.25rem);font-weight:400;line-height:1.35}.sub{margin:8px auto 0;max-width:680px;color:var(--muted);line-height:1.7}.title{margin:0 0 14px;color:var(--green);font-size:1.15rem;font-weight:400;padding-left:12px;border-left:5px solid var(--yellow)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.field label{display:block;margin-bottom:6px;color:#33483c;font-size:.92rem}input,select,textarea{width:100%;border:1px solid rgba(0,0,0,.08);border-radius:18px;padding:12px 14px;font-family:Mitr,sans-serif;font-weight:300;background:rgba(255,255,255,.88);outline:none}select{border-radius:999px}textarea{resize:vertical;min-height:120px;line-height:1.65}
+.guide{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}.guide div{background:rgba(255,255,255,.74);border:1px solid rgba(255,255,255,.6);border-radius:16px;padding:9px 6px;text-align:center;color:#445449;font-size:.85rem;line-height:1.45}
+.progressbox{margin-bottom:14px;padding:12px;border-radius:18px;background:rgba(255,255,255,.65);color:var(--muted);font-size:.92rem}.pline{height:12px;background:rgba(0,0,0,.08);border-radius:999px;margin-top:8px;overflow:hidden}.pfill{height:100%;width:0%;background:linear-gradient(135deg,var(--green),var(--green2));border-radius:999px;transition:width .2s ease}
+.qlist{display:grid;gap:12px}.qcard{background:rgba(255,255,255,.80);border:1px solid rgba(255,255,255,.62);border-radius:22px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.055)}.qtitle{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}.qtitle b{min-width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:400;margin-top:2px;box-shadow:0 8px 18px rgba(0,102,51,.18)}.qtitle p{margin:0;line-height:1.65;color:#26352d}
+.rates{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.rate{cursor:pointer}.rate input{position:absolute;opacity:0;pointer-events:none}.rate span{min-height:62px;border-radius:18px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:1.15rem;font-weight:400;color:#33483c;transition:.18s ease;user-select:none}.rate small{font-size:.68rem;font-weight:300;color:var(--muted);line-height:1.15}.rate input:checked+span{background:linear-gradient(135deg,var(--green),var(--green2));color:white;border-color:rgba(255,204,0,.95);box-shadow:0 10px 22px rgba(0,102,51,.20);transform:translateY(-1px)}.rate input:checked+span small{color:rgba(255,255,255,.86)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:20px}.btn{border:0;border-radius:999px;padding:13px 28px;font-family:Mitr,sans-serif;font-weight:400;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.2s ease}.btn-primary{background:linear-gradient(135deg,var(--green),var(--green2));color:white;box-shadow:0 12px 24px rgba(0,102,51,.18)}.btn-light{background:rgba(255,255,255,.78);color:var(--green);border:1px solid rgba(0,102,51,.13)}.foot{text-align:center;color:var(--muted);font-size:.88rem;padding:14px 0 24px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.head,.card{padding:16px;border-radius:24px}.guide{grid-template-columns:1fr}.rates{gap:6px}.rate span{min-height:56px;font-size:1rem;border-radius:16px}.rate small{font-size:.58rem}.btn{width:100%}}
+@media(max-width:420px){.rate span{min-height:52px;padding:4px 2px}.rate small{display:none}}
+</style></head><body>
 <div class="page">
-<header class="header glass">
-<img class="logo" src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png">
-<h1>แบบประเมินความพึงพอใจ<br>การใช้งานระบบเลือกตั้งออนไลน์</h1>
-<p class="subtitle">การเลือกตั้งประธานนักเรียนคณะสี โรงเรียนเทพศิรินทร์ นนทบุรี ประจำปีการศึกษา 2569</p>
-</header>
+<header class="head glass"><img class="logo" src="https://www.tsn.ac.th/web/wp-content/uploads/2013/12/Logo_Blue-700x639.png" alt="DSN Logo"><h1>แบบประเมินความพึงพอใจ<br>การใช้งานระบบเลือกตั้งออนไลน์</h1><p class="sub">การเลือกตั้งประธานนักเรียนคณะสี โรงเรียนเทพศิรินทร์ นนทบุรี ประจำปีการศึกษา 2569</p></header>
 <form id="satisfactionForm">
-<section class="card glass"><h2 class="section-title">ตอนที่ 1 ข้อมูลทั่วไป</h2>
-<div class="grid">
-<div class="field"><label>สถานภาพผู้ตอบ *</label><select id="respondentType" required><option value="">เลือกสถานภาพ</option><option>นักเรียน</option><option>ครู</option><option>คณะกรรมการดำเนินงาน</option><option>อื่น ๆ</option></select></div>
-<div class="field"><label>ระดับชั้น</label><select id="gradeLevel"><option value="">ไม่ระบุ</option><option>ม.1</option><option>ม.2</option><option>ม.3</option><option>ม.4</option><option>ม.5</option><option>ม.6</option></select></div>
+<section class="card glass"><h2 class="title">ตอนที่ 1 ข้อมูลทั่วไป</h2><div class="grid">
+<div class="field"><label>สถานภาพผู้ตอบแบบประเมิน *</label><select id="respondentType" required><option value="">เลือกสถานภาพ</option><option value="นักเรียน">นักเรียน</option><option value="ครู">ครู</option><option value="คณะกรรมการดำเนินงาน">คณะกรรมการดำเนินงาน</option><option value="อื่น ๆ">อื่น ๆ</option></select></div>
+<div class="field"><label>ระดับชั้น</label><select id="gradeLevel"><option value="">ไม่ระบุ</option><option value="ม.1">ม.1</option><option value="ม.2">ม.2</option><option value="ม.3">ม.3</option><option value="ม.4">ม.4</option><option value="ม.5">ม.5</option><option value="ม.6">ม.6</option></select></div>
 <div class="field"><label>ห้องเรียน</label><input id="room" type="text" placeholder="เช่น ม.5/1"></div>
-<div class="field"><label>คณะสี</label><select id="faction"><option value="">ไม่ระบุ</option><option>คณะแม้นนฤมิตร</option><option>คณะเยาวมาลย์อุทิศ</option><option>คณะนิภานภดล</option><option>คณะปิยราชบพิตร</option><option>คณะภาณุรังษี</option></select></div>
+<div class="field"><label>คณะสี</label><select id="faction"><option value="">ไม่ระบุ</option><option value="คณะแม้นนฤมิตร">คณะแม้นนฤมิตร</option><option value="คณะเยาวมาลย์อุทิศ">คณะเยาวมาลย์อุทิศ</option><option value="คณะนิภานภดล">คณะนิภานภดล</option><option value="คณะปิยราชบพิตร">คณะปิยราชบพิตร</option><option value="คณะภาณุรังษี">คณะภาณุรังษี</option></select></div>
 </div></section>
-<section class="card glass"><h2 class="section-title">ตอนที่ 2 รายการประเมิน</h2>
-<div class="scale-note"><div>5<br>มากที่สุด</div><div>4<br>มาก</div><div>3<br>ปานกลาง</div><div>2<br>น้อย</div><div>1<br>น้อยที่สุด</div></div>
-<div class="table-wrap"><table><thead><tr><th>รายการประเมิน</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th></tr></thead><tbody>
-<tr>
-  <td class="q">1. การประชาสัมพันธ์การเลือกตั้งมีความชัดเจนและทั่วถึง</td>
-  <td><input required type="radio" name="q1" value="5"></td>
-  <td><input type="radio" name="q1" value="4"></td>
-  <td><input type="radio" name="q1" value="3"></td>
-  <td><input type="radio" name="q1" value="2"></td>
-  <td><input type="radio" name="q1" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">2. ข้อมูลผู้สมัครมีความครบถ้วน เข้าใจง่าย</td>
-  <td><input required type="radio" name="q2" value="5"></td>
-  <td><input type="radio" name="q2" value="4"></td>
-  <td><input type="radio" name="q2" value="3"></td>
-  <td><input type="radio" name="q2" value="2"></td>
-  <td><input type="radio" name="q2" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">3. ขั้นตอนการเลือกตั้งออนไลน์มีความชัดเจนและเข้าใจง่าย</td>
-  <td><input required type="radio" name="q3" value="5"></td>
-  <td><input type="radio" name="q3" value="4"></td>
-  <td><input type="radio" name="q3" value="3"></td>
-  <td><input type="radio" name="q3" value="2"></td>
-  <td><input type="radio" name="q3" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">4. ระบบเลือกตั้งออนไลน์ใช้งานง่ายและสะดวก</td>
-  <td><input required type="radio" name="q4" value="5"></td>
-  <td><input type="radio" name="q4" value="4"></td>
-  <td><input type="radio" name="q4" value="3"></td>
-  <td><input type="radio" name="q4" value="2"></td>
-  <td><input type="radio" name="q4" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">5. การกรอก Token และการยืนยันการลงคะแนนมีความสะดวก</td>
-  <td><input required type="radio" name="q5" value="5"></td>
-  <td><input type="radio" name="q5" value="4"></td>
-  <td><input type="radio" name="q5" value="3"></td>
-  <td><input type="radio" name="q5" value="2"></td>
-  <td><input type="radio" name="q5" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">6. ระบบแสดงข้อมูลผู้สมัครได้ชัดเจน เหมาะสม</td>
-  <td><input required type="radio" name="q6" value="5"></td>
-  <td><input type="radio" name="q6" value="4"></td>
-  <td><input type="radio" name="q6" value="3"></td>
-  <td><input type="radio" name="q6" value="2"></td>
-  <td><input type="radio" name="q6" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">7. ระบบมีความรวดเร็ว ไม่ติดขัดระหว่างการใช้งาน</td>
-  <td><input required type="radio" name="q7" value="5"></td>
-  <td><input type="radio" name="q7" value="4"></td>
-  <td><input type="radio" name="q7" value="3"></td>
-  <td><input type="radio" name="q7" value="2"></td>
-  <td><input type="radio" name="q7" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">8. ระบบมีความน่าเชื่อถือและสร้างความมั่นใจในการลงคะแนน</td>
-  <td><input required type="radio" name="q8" value="5"></td>
-  <td><input type="radio" name="q8" value="4"></td>
-  <td><input type="radio" name="q8" value="3"></td>
-  <td><input type="radio" name="q8" value="2"></td>
-  <td><input type="radio" name="q8" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">9. กระบวนการเลือกตั้งมีความโปร่งใสและยุติธรรม</td>
-  <td><input required type="radio" name="q9" value="5"></td>
-  <td><input type="radio" name="q9" value="4"></td>
-  <td><input type="radio" name="q9" value="3"></td>
-  <td><input type="radio" name="q9" value="2"></td>
-  <td><input type="radio" name="q9" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">10. คณะกรรมการ/ผู้ดำเนินงานให้คำแนะนำและช่วยเหลืออย่างเหมาะสม</td>
-  <td><input required type="radio" name="q10" value="5"></td>
-  <td><input type="radio" name="q10" value="4"></td>
-  <td><input type="radio" name="q10" value="3"></td>
-  <td><input type="radio" name="q10" value="2"></td>
-  <td><input type="radio" name="q10" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">11. การประกาศผลการเลือกตั้งมีความชัดเจน โปร่งใส</td>
-  <td><input required type="radio" name="q11" value="5"></td>
-  <td><input type="radio" name="q11" value="4"></td>
-  <td><input type="radio" name="q11" value="3"></td>
-  <td><input type="radio" name="q11" value="2"></td>
-  <td><input type="radio" name="q11" value="1"></td>
-</tr>
-
-<tr>
-  <td class="q">12. โดยรวมแล้ว ท่านมีความพึงพอใจต่อการจัดการเลือกตั้งครั้งนี้</td>
-  <td><input required type="radio" name="q12" value="5"></td>
-  <td><input type="radio" name="q12" value="4"></td>
-  <td><input type="radio" name="q12" value="3"></td>
-  <td><input type="radio" name="q12" value="2"></td>
-  <td><input type="radio" name="q12" value="1"></td>
-</tr></tbody></table></div>
-</section>
-<section class="card glass"><h2 class="section-title">ตอนที่ 3 ข้อเสนอแนะเพิ่มเติม</h2>
-<textarea id="suggestion" placeholder="ข้อเสนอแนะของคุณ"></textarea>
-<div class="actions"><button id="submitBtn" class="btn btn-primary" type="submit">ส่งแบบประเมิน</button><a class="btn btn-light" href="index.html">กลับหน้าหลัก</a></div>
-</section></form><div class="footer">ขอบคุณสำหรับความร่วมมือในการตอบแบบประเมิน</div></div>
+<section class="card glass"><h2 class="title">ตอนที่ 2 รายการประเมิน</h2><div class="guide"><div>5<br>มากที่สุด</div><div>4<br>มาก</div><div>3<br>ปานกลาง</div><div>2<br>น้อย</div><div>1<br>น้อยที่สุด</div></div><div class="progressbox">ตอบแล้ว <span id="answeredCount">0</span> / 12 ข้อ<div class="pline"><div id="progressFill" class="pfill"></div></div></div><div class="qlist"><div class="qcard"><div class="qtitle"><b>1</b><p>การประชาสัมพันธ์การเลือกตั้งมีความชัดเจนและทั่วถึง</p></div><div class="rates"><label class="rate"><input type="radio" name="q1" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q1" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q1" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q1" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q1" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>2</b><p>ข้อมูลผู้สมัครมีความครบถ้วน เข้าใจง่าย</p></div><div class="rates"><label class="rate"><input type="radio" name="q2" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q2" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q2" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q2" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q2" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>3</b><p>ขั้นตอนการเลือกตั้งออนไลน์มีความชัดเจนและเข้าใจง่าย</p></div><div class="rates"><label class="rate"><input type="radio" name="q3" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q3" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q3" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q3" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q3" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>4</b><p>ระบบเลือกตั้งออนไลน์ใช้งานง่ายและสะดวก</p></div><div class="rates"><label class="rate"><input type="radio" name="q4" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q4" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q4" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q4" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q4" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>5</b><p>การกรอก Token และการยืนยันการลงคะแนนมีความสะดวก</p></div><div class="rates"><label class="rate"><input type="radio" name="q5" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q5" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q5" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q5" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q5" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>6</b><p>ระบบแสดงข้อมูลผู้สมัครได้ชัดเจน เหมาะสม</p></div><div class="rates"><label class="rate"><input type="radio" name="q6" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q6" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q6" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q6" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q6" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>7</b><p>ระบบมีความรวดเร็ว ไม่ติดขัดระหว่างการใช้งาน</p></div><div class="rates"><label class="rate"><input type="radio" name="q7" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q7" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q7" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q7" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q7" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>8</b><p>ระบบมีความน่าเชื่อถือและสร้างความมั่นใจในการลงคะแนน</p></div><div class="rates"><label class="rate"><input type="radio" name="q8" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q8" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q8" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q8" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q8" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>9</b><p>กระบวนการเลือกตั้งมีความโปร่งใสและยุติธรรม</p></div><div class="rates"><label class="rate"><input type="radio" name="q9" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q9" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q9" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q9" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q9" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>10</b><p>คณะกรรมการ/ผู้ดำเนินงานให้คำแนะนำและช่วยเหลืออย่างเหมาะสม</p></div><div class="rates"><label class="rate"><input type="radio" name="q10" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q10" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q10" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q10" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q10" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>11</b><p>การประกาศผลการเลือกตั้งมีความชัดเจน โปร่งใส</p></div><div class="rates"><label class="rate"><input type="radio" name="q11" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q11" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q11" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q11" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q11" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div>
+<div class="qcard"><div class="qtitle"><b>12</b><p>โดยรวมแล้ว ท่านมีความพึงพอใจต่อการจัดการเลือกตั้งครั้งนี้</p></div><div class="rates"><label class="rate"><input type="radio" name="q12" value="5" required><span>5<small>มากที่สุด</small></span></label><label class="rate"><input type="radio" name="q12" value="4" ><span>4<small>มาก</small></span></label><label class="rate"><input type="radio" name="q12" value="3" ><span>3<small>ปานกลาง</small></span></label><label class="rate"><input type="radio" name="q12" value="2" ><span>2<small>น้อย</small></span></label><label class="rate"><input type="radio" name="q12" value="1" ><span>1<small>น้อยที่สุด</small></span></label></div></div></div></section>
+<section class="card glass"><h2 class="title">ตอนที่ 3 ข้อเสนอแนะเพิ่มเติม</h2><textarea id="suggestion" placeholder="ข้อเสนอแนะของคุณ"></textarea><div class="actions"><button id="submitBtn" class="btn btn-primary" type="submit">ส่งแบบประเมิน</button><a class="btn btn-light" href="index.html">กลับหน้าหลัก</a></div></section>
+</form><div class="foot">ขอบคุณสำหรับความร่วมมือในการตอบแบบประเมิน</div></div>
 <script>
-const SUPABASE_URL='https://wvucxiieuckmepnywvol.supabase.co'; const SUPABASE_ANON_KEY='sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg';
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const form=document.getElementById('satisfactionForm'); const submitBtn=document.getElementById('submitBtn');
+const SUPABASE_URL='https://wvucxiieuckmepnywvol.supabase.co'; const SUPABASE_ANON_KEY='sb_publishable_9LXKzCwOS_Vac8u_dKnkxQ_AhdWrgkg'; const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const form=document.getElementById('satisfactionForm'), submitBtn=document.getElementById('submitBtn');
 function getScore(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?Number(el.value):null;}
-form.addEventListener('submit',async(e)=>{e.preventDefault();const scores={};for(let i=1;i<=12;i++){const s=getScore('q'+i);if(!s)return Swal.fire('แจ้งเตือน','กรุณาประเมินให้ครบทุกข้อ','warning');scores['q'+i]=s;}
-const respondentType=document.getElementById('respondentType').value;if(!respondentType)return Swal.fire('แจ้งเตือน','กรุณาเลือกสถานภาพผู้ตอบแบบประเมิน','warning');
-const payload={respondent_type:respondentType,grade_level:document.getElementById('gradeLevel').value||null,room:document.getElementById('room').value.trim()||null,faction:document.getElementById('faction').value||null,suggestion:document.getElementById('suggestion').value.trim()||null,...scores};
-submitBtn.disabled=true;submitBtn.textContent='กำลังส่ง...';Swal.fire({title:'กำลังบันทึกข้อมูล...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
-try{const {error}=await supabaseClient.from('satisfaction_responses').insert([payload]);if(error)throw error;Swal.fire('สำเร็จ','ขอบคุณที่ตอบแบบประเมิน','success').then(()=>location.reload());}
-catch(error){console.error(error);Swal.fire('ไม่สำเร็จ',error.message||'ไม่สามารถส่งแบบประเมินได้','error');}
-finally{submitBtn.disabled=false;submitBtn.textContent='ส่งแบบประเมิน';}});
+function updateProgress(){let a=0;for(let i=1;i<=12;i++)if(getScore('q'+i))a++;document.getElementById('answeredCount').textContent=a;document.getElementById('progressFill').style.width=((a/12)*100).toFixed(2)+'%';}
+document.querySelectorAll('input[type="radio"]').forEach(i=>i.addEventListener('change',updateProgress));
+form.addEventListener('submit',async(event)=>{event.preventDefault();const scores={};for(let i=1;i<=12;i++){const s=getScore('q'+i);if(!s)return Swal.fire('แจ้งเตือน','กรุณาประเมินให้ครบทุกข้อ','warning');scores['q'+i]=s;}const respondentType=document.getElementById('respondentType').value;if(!respondentType)return Swal.fire('แจ้งเตือน','กรุณาเลือกสถานภาพผู้ตอบแบบประเมิน','warning');const payload={respondent_type:respondentType,grade_level:document.getElementById('gradeLevel').value||null,room:document.getElementById('room').value.trim()||null,faction:document.getElementById('faction').value||null,suggestion:document.getElementById('suggestion').value.trim()||null,...scores};submitBtn.disabled=true;submitBtn.textContent='กำลังส่ง...';Swal.fire({title:'กำลังบันทึกข้อมูล...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});try{const {error}=await supabaseClient.from('satisfaction_responses').insert([payload]);if(error)throw error;Swal.fire('สำเร็จ','ขอบคุณที่ตอบแบบประเมิน','success').then(()=>{form.reset();updateProgress();window.scrollTo({top:0,behavior:'smooth'});});}catch(error){console.error(error);Swal.fire('ไม่สำเร็จ',error.message||'ไม่สามารถส่งแบบประเมินได้','error');}finally{submitBtn.disabled=false;submitBtn.textContent='ส่งแบบประเมิน';}});
 </script></body></html>
